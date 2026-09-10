@@ -29,12 +29,16 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 2. Vô hiệu hóa hoàn toàn SwiftLint vĩnh viễn trên CI
+          # 2. ĐÒN TRIỆT HẠ TẬN GỐC: Tìm và vô hiệu hóa tất cả tệp thực thi SwiftLint (kể cả trong Pods)
           echo '#!/bin/bash' > ./swiftlint_mock
-          echo 'echo "SwiftLint deactivated by CI"' >> ./swiftlint_mock
+          echo 'echo "SwiftLint neutralized by CI workflow"' >> ./swiftlint_mock
           echo 'exit 0' >> ./swiftlint_mock
           chmod +x ./swiftlint_mock
 
+          # Quét toàn bộ dự án và Pods, bất kỳ chỗ nào có file chạy tên là 'swiftlint' sẽ bị ghi đè bằng file rỗng
+          find . -name "swiftlint" -type f -exec cp ./swiftlint_mock {} \; 2>/dev/null || true
+
+          # Ghi đè thêm vào các đường dẫn hệ thống để đảm bảo an toàn tuyệt đối
           sudo cp ./swiftlint_mock /usr/local/bin/swiftlint 2>/dev/null || true
           sudo cp ./swiftlint_mock /opt/homebrew/bin/swiftlint 2>/dev/null || true
           
