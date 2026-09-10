@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build Opaline for armv7 / iOS 9.3.5 on Linux.
+# Build Opaline for arm64 / iOS 9.3.5 on Linux.
 #
 # Logging is the point: a full compile of 376 Swift files on this toolchain is
 # slow, so everything is timestamped and streamed to a log you can watch from
@@ -26,7 +26,7 @@ mkdir -p "$LOG_DIR" "$BUILD/obj" "$BUILD/logs"
 
 SWIFTC="${SWIFTC:-$REPO/scripts/legacy/darling-swiftc}"
 SDK="${SDK:-$TOOLS/xc12/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.5.sdk}"
-TARGET="${TARGET:-armv7-apple-ios9.3}"
+TARGET="${TARGET:-arm64-apple-ios10.0}"
 # wmo is the proven path and the only one that has ever produced a binary.
 # perfile passes -primary-file, which is a frontend-only flag the driver
 # rejects outright, so it fails on the first file every time.
