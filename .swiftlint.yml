@@ -14,3 +14,16 @@ custom_rules:
     regex: "(TODO|FIXME)(?!\\([A-Z]+-\\d+\\))"
     message: "TODO and FIXME must reference a ticket, for example TODO(PROJ-123)."
     severity: error
+identifier_name:
+  min_length:
+    warning: 2
+    error: 2
+  excluded:
+    - id
+    - cx
+    - cy
+    - ex
+    - ey
+    - sz
+    - px
+    - ac
