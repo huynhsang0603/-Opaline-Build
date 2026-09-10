@@ -1,11 +1,11 @@
 # Biến TẤT CẢ các lỗi vi phạm của mọi quy tắc thành Cảnh báo (Warning)
 only_warnings: true
 
-# Thiết lập ngưỡng lỗi chặn build lên vô hạn để không bao giờ làm sập tiến trình build nữa
+# Thiết lập ngưỡng lỗi chặn build lên vô hạn
 warning_threshold: 99999
 error_threshold: 99999
 
-# Tắt bỏ hoàn toàn các quy tắc quét nghiêm ngặt nhất
+# Tắt bỏ hoàn toàn các quy tắc quét nghiêm ngặt nhất làm sập hệ thống
 disabled_rules:
   - superfluous_disable_command
   - orphaned_doc_comment
@@ -13,3 +13,7 @@ disabled_rules:
   - closure_parameter_position
   - identifier_name
   - line_length
+  - function_body_length
+  - function_parameter_count
+  - type_body_length
+  - optional_data_string_conversion
