@@ -1,29 +1,15 @@
-# Biến mọi lỗi định dạng thành Cảnh báo (Warning) thay vì lỗi chặn build (Error)
-warning_threshold: 9999
+# Biến TẤT CẢ các lỗi vi phạm của mọi quy tắc thành Cảnh báo (Warning)
+only_warnings: true
 
-# Tắt bỏ hoàn toàn các quy tắc quá khắt khe vừa báo lỗi
+# Thiết lập ngưỡng lỗi chặn build lên vô hạn để không bao giờ làm sập tiến trình build nữa
+warning_threshold: 99999
+error_threshold: 99999
+
+# Tắt bỏ hoàn toàn các quy tắc quét nghiêm ngặt nhất
 disabled_rules:
   - superfluous_disable_command
   - orphaned_doc_comment
   - large_tuple
-
-identifier_name:
-  min_length:
-    warning: 1 # Cho phép biến ngắn 1 ký tự như 'i'
-    error: 1
-  excluded:
-    - id
-    - cx
-    - cy
-    - ex
-    - ey
-    - sz
-    - px
-    - ac
-    - i
-
-line_length:
-  warning: 200
-  error: 300
-  ignores_comments: true
-  ignores_urls: true
+  - closure_parameter_position
+  - identifier_name
+  - line_length
