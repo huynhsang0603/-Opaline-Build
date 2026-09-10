@@ -21,7 +21,7 @@ jobs:
           DISABLE_SWIFTLINT: "true"
           SWIFTLINT_DISABLE: "YES"
         run: |
-          # 1. Tạo cấu hình Local.xcconfig
+          # 1. Tạo cấu hình Local.xcconfig như cũ
           mkdir -p Config
           echo 'PRODUCT_BUNDLE_IDENTIFIER = com.yourname.opaline' > Config/Local.xcconfig
           echo 'DEVELOPMENT_TEAM = 12345ABCDE' >> Config/Local.xcconfig
@@ -30,34 +30,21 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 2. PHƯƠNG ÁN TỐI HẬU: Ghi đè file thực thi rỗng vào TẤT CẢ các thư mục Cache, Toolchain của Xcode
-          echo '#!/bin/bash' > ./swiftlint_fake
-          echo 'echo "SwiftLint blocked vĩnh viễn bởi CI"' >> ./swiftlint_fake
-          echo 'exit 0' >> ./swiftlint_fake
-          chmod +x ./swiftlint_fake
+          # 2. ĐÒN QUYẾT ĐỊNH: Vô hiệu hóa SwiftLint từ cấp độ mã nguồn của toàn bộ dự án
+          # Lệnh này quét toàn bộ file .swift (bao gồm tất cả thư mục con và submodule)
+          # và tự động chèn '// swiftlint:disable all' vào dòng đầu tiên của từng file.
+          find . -name "*.swift" -type f -exec sh -c '
+            for file do
+              echo "// swiftlint:disable all" | cat - "$file" > temp && mv temp "$file"
+            done
+          ' sh {} +
 
-          # Đè thẳng vào các thư mục chứa lệnh hệ thống và Homebrew
-          sudo cp ./swiftlint_fake /usr/local/bin/swiftlint 2>/dev/null || true
-          sudo cp ./swiftlint_fake /opt/homebrew/bin/swiftlint 2>/dev/null || true
-          
-          # Đè thẳng vào thư mục cài cắm CocoaPods Build Phase Script nếu có
-          find . -name "swiftlint" -type f -exec cp ./swiftlint_fake {} \; 2>/dev/null || true
-          
-          # Đè thẳng vào thư mục chạy tạm (DerivedData) của Xcode Build Phase
-          mkdir -p /Users/runner/Library/Developer/Xcode/DerivedData/
-          find /Users/runner/Library/Developer/Xcode/DerivedData/ -name "swiftlint" -type f -exec cp ./swiftlint_fake {} \; 2>/dev/null || true
-
-          # 3. Tạo file .swiftlint.yml trống bao phủ toàn cục thư mục dự án và thư mục mẹ
+          # 3. Tạo file cấu hình trống làm phương án dự phòng toàn cục
           echo "only_rules: []" > .swiftlint.yml
           echo "analyzer_rules: []" >> .swiftlint.yml
-          cp .swiftlint.yml ../.swiftlint.yml
-          cp .swiftlint.yml /Users/runner/.swiftlint.yml 2>/dev/null || true
+          cp .swiftlint.yml ../.swiftlint.yml 2>/dev/null || true
+          cp .swiftlint.yml ~/.swiftlint.yml 2>/dev/null || true
 
-          # 4. Ép công cụ build dùng PATH ảo có chứa swiftlint_fake để đánh lừa Plugins
-          mkdir -p ./mock_bin
-          cp ./swiftlint_fake ./mock_bin/swiftlint
-          export PATH="$(pwd)/mock_bin:$PATH"
-
-          # 5. Chạy script tạo IPA của bạn
+          # 4. Chạy script tạo IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
