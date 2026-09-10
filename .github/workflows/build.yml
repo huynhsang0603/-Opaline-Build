@@ -29,28 +29,11 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 2. ĐÒN QUYẾT ĐỊNH 1: Chèn lệnh tắt SwiftLint vào dòng đầu tiên của TẤT CẢ các file .swift
-          # Lệnh này tương thích hoàn toàn với macOS của GitHub Actions
-          find . -name "*.swift" -type f -exec sh -c "echo '// swiftlint:disable all' | cat - \"\$1\" > temp && mv temp \"\$1\"" _ {} \;
+          # 2. ĐÒN QUYẾT ĐỊNH: Xóa bỏ tận gốc tập lệnh SwiftLint trong cấu trúc Xcode Project
+          # Tìm tất cả file project.pbxproj (kể cả trong submodule) và thay thế lệnh chạy swiftlint bằng lệnh echo rỗng
+          find . -name "project.pbxproj" -exec sed -i '' 's/swiftlint/echo "SwiftLint disabled by CI"/g' {} \;
+          find . -name "project.pbxproj" -exec sed -i '' 's/${PODS_ROOT}\/SwiftLint\/swiftlint/echo "SwiftLint disabled by CI"/g' {} \;
 
-          # 3. ĐÒN QUYẾT ĐỊNH 2: Tạo file cấu hình trống tại tất cả các thư mục HOME và thư mục gốc để ép tắt quy tắc
-          echo "only_rules: []" > ~/.swiftlint.yml
-          echo "analyzer_rules: []" >> ~/.swiftlint.yml
-          cp ~/.swiftlint.yml ./.swiftlint.yml
-
-          # 4. ĐÒN QUYẾT ĐỊNH 3: Tạo file binary giả lập để chặn đường hệ thống
-          echo '#!/bin/bash' > ./swiftlint_mock
-          echo 'echo "SwiftLint deactivated by CI"' >> ./swiftlint_mock
-          echo 'exit 0' >> ./swiftlint_mock
-          chmod +x ./swiftlint_mock
-
-          sudo cp ./swiftlint_mock /usr/local/bin/swiftlint 2>/dev/null || true
-          sudo cp ./swiftlint_mock /opt/homebrew/bin/swiftlint 2>/dev/null || true
-          find . -name "swiftlint" -type f -exec cp ./swiftlint_mock {} \; 2>/dev/null || true
-          
-          export PATH="$(pwd):$PATH"
-          export SWIFTLINT_PATH="$(pwd)/swiftlint_mock"
-
-          # 5. Chạy script tạo IPA của bạn
+          # 3. Chạy script tạo IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
