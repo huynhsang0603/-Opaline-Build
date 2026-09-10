@@ -27,3 +27,8 @@ identifier_name:
     - sz
     - px
     - ac
+line_length:
+  warning: 200 # Đổi mức cảnh báo lên 200 ký tự
+  error: 300   # Chỉ chặn build nếu dòng code dài quá 300 ký tự
+  ignores_comments: true # Bỏ qua không tính độ dài đối với các dòng ghi chú (comments)
+  ignores_urls: true     # Bỏ qua không tính độ dài đối với các đường link URL
