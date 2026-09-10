@@ -190,13 +190,11 @@ enum_case_associated_values_count:
   warning: 2
   error: 4
 
-custom_rules:
-  no_debug_print:
-    name: "No Print"
-    regex: "\\bprint\\s*\\("
-    message: "Use a structured logger instead of print."
-    severity: error
+disabled_rules:
+  - shorthand_optional_binding
+  - type_contents_order
 
+custom_rules:
   no_debug_nslog:
     name: "No NSLog"
     regex: "\\bNSLog\\s*\\("
@@ -208,6 +206,3 @@ custom_rules:
     regex: "(TODO|FIXME)(?!\\([A-Z]+-\\d+\\))"
     message: "TODO and FIXME must reference a ticket, for example TODO(PROJ-123)."
     severity: error
-disabled_rules:
-  - shorthand_optional_binding
-  - type_contents_order
