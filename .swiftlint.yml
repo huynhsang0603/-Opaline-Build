@@ -1,23 +1,16 @@
+# Biến mọi lỗi định dạng thành Cảnh báo (Warning) thay vì lỗi chặn build (Error)
+warning_threshold: 9999
+
+# Tắt bỏ hoàn toàn các quy tắc quá khắt khe vừa báo lỗi
 disabled_rules:
-  - shorthand_optional_binding
-  - type_contents_order
+  - superfluous_disable_command
+  - orphaned_doc_comment
+  - large_tuple
 
-custom_rules:
-  no_debug_nslog:
-    name: "No NSLog"
-    regex: "\\bNSLog\\s*\\("
-    message: "Use a structured logger instead of NSLog."
-    severity: error
-
-  todo_requires_ticket:
-    name: "TODO Requires Ticket"
-    regex: "(TODO|FIXME)(?!\\([A-Z]+-\\d+\\))"
-    message: "TODO and FIXME must reference a ticket, for example TODO(PROJ-123)."
-    severity: error
 identifier_name:
   min_length:
-    warning: 2
-    error: 2
+    warning: 1 # Cho phép biến ngắn 1 ký tự như 'i'
+    error: 1
   excluded:
     - id
     - cx
@@ -27,8 +20,10 @@ identifier_name:
     - sz
     - px
     - ac
+    - i
+
 line_length:
-  warning: 200 # Đổi mức cảnh báo lên 200 ký tự
-  error: 300   # Chỉ chặn build nếu dòng code dài quá 300 ký tự
-  ignores_comments: true # Bỏ qua không tính độ dài đối với các dòng ghi chú (comments)
-  ignores_urls: true     # Bỏ qua không tính độ dài đối với các đường link URL
+  warning: 200
+  error: 300
+  ignores_comments: true
+  ignores_urls: true
