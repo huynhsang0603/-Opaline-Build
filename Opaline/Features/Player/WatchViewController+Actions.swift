@@ -187,15 +187,15 @@ extension WatchViewController {
         guard let url = URL(string: "https://youtu.be/\(videoId)") else {
             return
         }
-        let ac = UIActivityViewController(
+        let actionContext = UIActivityViewController(
             activityItems: [url],
             applicationActivities: nil
         )
-        if let popover = ac.popoverPresentationController {
+        if let popover = actionContext.popoverPresentationController {
             popover.sourceView = shareButton
             popover.sourceRect = shareButton.bounds
         }
-        present(ac, animated: true)
+        present(actionContext, animated: true)
     }
 
     @objc

@@ -189,10 +189,10 @@ extension PlayerIcons {
                 string: "1x",
                 attributes: attrs
             )
-            let sz = str.size()
+            let iconSize = str.size()
             str.draw(at: CGPoint(
-                x: (24 - sz.width) / 2,
-                y: (24 - sz.height) / 2
+                x: (24 - iconSize.width) / 2,
+                y: (24 - iconSize.height) / 2
             ))
         }
     }
@@ -201,22 +201,22 @@ extension PlayerIcons {
 extension PlayerIcons {
     private static func skipIcon(forward: Bool) -> UIImage {
         draw(size: CGSize(width: 44, height: 44)) { _ in
-            let cx: CGFloat = 22
-            let cy: CGFloat = 21
+            let centerX: CGFloat = 22
+            let centerY: CGFloat = 21
             let radius: CGFloat = 12
             drawSkipArc(
-                cx: cx,
-                cy: cy,
+                centerX: centerX,
+                centerY: centerY,
                 radius: radius,
                 forward: forward
             )
-            drawSkipText(cx: cx, cy: cy)
+            drawSkipText(centerX: centerX, centerY: centerY)
         }
     }
 
     private static func drawSkipArc(
-        cx: CGFloat,
-        cy: CGFloat,
+        centerX: CGFloat,
+        centerY: CGFloat,
         radius: CGFloat,
         forward: Bool
     ) {
@@ -225,7 +225,7 @@ extension PlayerIcons {
         let endAngle: CGFloat = forward
             ? (.pi * 11 / 6) : (.pi / 6)
         let arc = UIBezierPath(
-            arcCenter: CGPoint(x: cx, y: cy),
+            arcCenter: CGPoint(x: centerX, y: centerY),
             radius: radius,
             startAngle: startAngle,
             endAngle: endAngle,
@@ -235,14 +235,14 @@ extension PlayerIcons {
         arc.lineCapStyle = .butt
         UIColor.white.setStroke()
         arc.stroke()
-        let ex = cx + radius * cos(endAngle)
-        let ey = cy + radius * sin(endAngle)
+        let endX = centerX + radius * cos(endAngle)
+        let endY = centerY + radius * sin(endAngle)
         let velX: CGFloat = forward
             ? -sin(endAngle) : sin(endAngle)
         let velY: CGFloat = forward
             ? cos(endAngle) : -cos(endAngle)
         drawSkipArrowhead(
-            endpoint: CGPoint(x: ex, y: ey),
+            endpoint: CGPoint(x: endX, y: endY),
             velocityAngle: atan2(velY, velX)
         )
     }
@@ -270,7 +270,7 @@ extension PlayerIcons {
         arrow.stroke()
     }
 
-    private static func drawSkipText(cx: CGFloat, cy: CGFloat) {
+    private static func drawSkipText(centerX: CGFloat, centerY: CGFloat) {
         let attrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.boldSystemFont(ofSize: 10),
             .foregroundColor: UIColor.white
@@ -279,10 +279,10 @@ extension PlayerIcons {
             string: "10",
             attributes: attrs
         )
-        let sz = str.size()
+        let iconSize = str.size()
         str.draw(at: CGPoint(
-            x: cx - sz.width / 2,
-            y: cy - sz.height / 2 + 1
+            x: centerX - iconSize.width / 2,
+            y: centerY - iconSize.height / 2 + 1
         ))
     }
 }

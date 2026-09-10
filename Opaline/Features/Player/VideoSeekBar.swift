@@ -87,8 +87,8 @@ final class VideoSeekBar: UIControl {
 
     @objc
     private func handlePan(_ gesture: UIPanGestureRecognizer) {
-        let px = gesture.location(in: self).x
-        let pct = max(0, min(1, Double(px / bounds.width)))
+        let pixelX = gesture.location(in: self).x
+        let pct = max(0, min(1, Double(pixelX / bounds.width)))
 
         switch gesture.state {
         case .began:
@@ -131,8 +131,8 @@ final class VideoSeekBar: UIControl {
     private func handleTrackTap(
         _ gesture: UITapGestureRecognizer
     ) {
-        let px = gesture.location(in: self).x
-        let pct = max(0, min(1, Double(px / bounds.width)))
+        let pixelX = gesture.location(in: self).x
+        let pct = max(0, min(1, Double(pixelX / bounds.width)))
         progress = pct
         setNeedsLayout()
         onScrubEnd?(pct)
