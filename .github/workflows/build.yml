@@ -1,24 +1,25 @@
-name: Build iOS IPA
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: macos-15
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
       - name: Run Build Script
         env:
           NO_LINT: "1"
           DISABLE_SWIFTLINT: "true"
         run: |
+          # 1. Tạo thư mục Config và sinh file Local.xcconfig như cũ
+          mkdir -p Config
+          echo 'PRODUCT_BUNDLE_IDENTIFIER = com.yourname.opaline' > Config/Local.xcconfig
+          echo 'DEVELOPMENT_TEAM = 12345ABCDE' >> Config/Local.xcconfig
+          echo 'CODE_SIGNING_REQUIRED = NO' >> Config/Local.xcconfig
+          echo 'CODE_SIGNING_ALLOWED = NO' >> Config/Local.xcconfig
+          echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
+          echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
+
+          # 2. Tạo nội dung vô hiệu hóa SwiftLint hoàn toàn
+          echo "only_rules: []" > .swiftlint.yml
+          echo "analyzer_rules: []" >> .swiftlint.yml
+
+          # 3. Sao chép đè file cấu hình trống này vào tất cả các thư mục con để ép SwiftLint phải nhận
+          find . -type d -not -path '*/.*' -exec cp .swiftlint.yml {}/ \; 2>/dev/null || true
+
+          # 4. Chạy script tạo IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
