@@ -38,7 +38,7 @@ jobs:
           " || true
 
           echo "#!/bin/bash" > ./swiftlint
-          echo "echo 'SwiftLint bypassed'" >> ./swiftlint
+          echo "echo 'SwiftLint disabled'" >> ./swiftlint
           echo "exit 0" >> ./swiftlint
           chmod +x ./swiftlint
           export PATH="$(pwd):$PATH"
