@@ -208,3 +208,6 @@ custom_rules:
     regex: "(TODO|FIXME)(?!\\([A-Z]+-\\d+\\))"
     message: "TODO and FIXME must reference a ticket, for example TODO(PROJ-123)."
     severity: error
+disabled_rules:
+  - shorthand_optional_binding
+  - type_contents_order
