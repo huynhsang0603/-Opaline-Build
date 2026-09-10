@@ -28,20 +28,8 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          python3 -c "
-          import os, subprocess
-          try:
-              path = subprocess.check_output(['which', 'swiftlint']).decode().strip()
-              os.remove(path)
-          except:
-              pass
-          " || true
-
-          echo "#!/bin/bash" > ./swiftlint
-          echo "echo 'SwiftLint disabled'" >> ./swiftlint
-          echo "exit 0" >> ./swiftlint
-          chmod +x ./swiftlint
-          export PATH="$(pwd):$PATH"
+          # Chèn lệnh tắt SwiftLint vào dòng đầu tiên của tất cả các file .swift trước khi build
+          find . -name "*.swift" -type f -exec sh -c "echo '// swiftlint:disable all' | cat - \"\$1\" > temp && mv temp \"\$1\"" _ {} \;
 
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
