@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+# ĐÒN QUYẾT ĐỊNH SỬA LỖI: Cấp quyền ghi mã nguồn để tạo Release thành công
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-15
@@ -16,7 +20,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install ldid-procursus manually
+      - name: Install ldid-procursus mock tool (Offline Fix)
         run: |
           brew uninstall ldid --force || true
           sudo rm -f /opt/homebrew/bin/ldid /usr/local/bin/ldid || true
@@ -64,6 +68,7 @@ jobs:
 
           # 4. Vô hiệu hóa tính năng tự động xóa code (Revert) bên trong file make_ipa.sh
           if [ -f "./make_ipa.sh" ]; then
+            echo "Neutralizing reset commands inside make_ipa.sh..."
             sed -i '' 's/echo ".*ldid-procursus required.*"/echo "Bypassing ldid check"/g' ./make_ipa.sh || true
             sed -i '' 's/exit 1/# exit 1/g' ./make_ipa.sh || true
             sed -i '' 's/git checkout/# git checkout/g' ./make_ipa.sh || true
@@ -179,10 +184,8 @@ jobs:
           # 12. GOM FILE IPA RA THƯ MỤC CHUNG ĐỂ CHUẨN BỊ UPLOAD RELEASES
           mkdir -p output_ipa
           find . -maxdepth 3 -name "*.ipa" -exec cp {} output_ipa/ \;
-          echo "Discovered IPAs for Release:"
-          ls -l output_ipa/
 
-      # 13. ĐỒN QUYẾT ĐỊNH: Tự động khởi tạo Release và đẩy thẳng file .ipa lên đó
+      # 13. Khởi tạo Release công khai và đính kèm file ứng dụng
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: success()
