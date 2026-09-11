@@ -166,13 +166,13 @@ jobs:
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
-      # 11. BƯỚC THU HOẠCH THÀNH PHẨM: Xuất và lưu trữ file .ipa lên giao diện để tải về máy
+      # 11. SỬA LỖI GHI ĐÈ FILE: Sử dụng chính xác lệnh upload-artifact để xuất file IPA tải về máy
       - name: Upload IPA Artifact
-        uses: actions/checkout@v4
-        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: Opaline-iOS-Application
           path: |
             *.ipa
             build/*.ipa
             output/*.ipa
+            build/Release-iphoneos/*.ipa
