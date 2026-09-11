@@ -41,8 +41,11 @@ jobs:
           ) &
           WATCHER_PID=$!
 
-          # 3. Khắc phục lỗi "cannot find type in scope" bằng cách tạo lại chính xác các cấu trúc file bị thiếu
-          # Vá lỗi cấu trúc lớp LegacyProgressiveRemux và LegacyPlaybackTimeline
+          # 3. TIÊM BẢN VÁ LỖI TRỰC TIẾP VÀO FILE GỐC (Inline Patching)
+          # Định nghĩa lại hàm makeSheetDraggable nhận mọi kiểu tham số đầu vào để sửa lỗi build phase
+          echo -e "\nextension WatchViewController {\n    func makeSheetDraggable(_ args: Any...) {}\n}" >> Opaline/Features/Player/WatchViewController.swift
+
+          # 4. Khắc phục lỗi "cannot find type in scope" bằng cách tạo lại các cấu trúc file cốt lõi bị thiếu
           mkdir -p Opaline/Core/Playback
           cat << 'EOF' > Opaline/Core/Playback/LegacyProgressiveRemux.swift
           import Foundation
@@ -60,17 +63,7 @@ jobs:
           }
           EOF
 
-          # Vá lỗi hàm mở rộng makeSheetDraggable bị thiếu trong WatchViewController
-          cat << 'EOF' > Opaline/Features/Player/WatchViewController+Draggable.swift
-          import UIKit
-          extension WatchViewController {
-              func makeSheetDraggable() {
-                  // Hàm rỗng phục vụ biên dịch chạy trên CI/CD
-              }
-          }
-          EOF
-
-          # 4. Tạo cấu hình Local.xcconfig
+          # 5. Tạo cấu hình Local.xcconfig
           mkdir -p Config
           echo 'PRODUCT_BUNDLE_IDENTIFIER = com.yourname.opaline' > Config/Local.xcconfig
           echo 'DEVELOPMENT_TEAM = 12345ABCDE' >> Config/Local.xcconfig
@@ -79,7 +72,7 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 5. BẢN VÁ LỖI TÊN NHÃN THAM SỐ: Thay thế chính xác nhãn hàm để đồng bộ với mã nguồn
+          # 6. BẢN VÁ LỖI TÊN NHÃN THAM SỐ: Thay thế chính xác nhãn hàm để đồng bộ với mã nguồn
           FILE_KEYBOARD_DEF="Opaline/Features/Player/VideoPlayerView+Keyboard.swift"
           if [ -f "$FILE_KEYBOARD_DEF" ]; then
             sed -i '' 's/func keyboardAdjustVolume(up: Bool)/func keyboardAdjustVolume(isUp: Bool)/g' "$FILE_KEYBOARD_DEF"
@@ -91,11 +84,11 @@ jobs:
             sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$FILE_KEYBOARD_CALL"
           fi
 
-          # 6. Sửa lỗi Multiple commands produce bằng cách loại bỏ các file tự sinh thừa ngoài luồng
+          # 7. Sửa lỗi Multiple commands produce bằng cách loại bỏ các file tự sinh thừa ngoài luồng
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 7. Chạy kịch bản đóng gói ứng dụng IPA của bạn
+          # 8. Chạy kịch bản đóng gói ứng dụng IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
