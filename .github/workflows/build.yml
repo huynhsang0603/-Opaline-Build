@@ -34,9 +34,8 @@ jobs:
             sed -i '' 's/shellScript = ".*SwiftLint.*";/shellScript = "echo \\"SwiftLint Bypassed\\"; exit 0";/g' "$PBXPROJ" || true
           fi
 
-          # 3. SỬA LỖI MẤT HÀM: Tái cấu trúc file WatchViewController+Layout.swift đầy đủ 100%
-          # Đoạn mã này chứa toàn bộ các hàm bị thiếu (setupLayout, setupNavigationBar, addNotificationObservers, v.v...)
-          # Đồng thời sửa luôn các biến ngắn (fl -> frameLayout) để không vi phạm nếu linter chạy ngầm.
+          # 3. SỬA LỖI MẤT HÀM & ÉP KIỂU CONSTRAINT: Tái cấu trúc file WatchViewController+Layout.swift đầy đủ 100%
+          # Thêm [].compactMap { $0 } để sửa triệt để lỗi ép kiểu dữ liệu Optional của NSLayoutConstraint
           cat << 'EOF' > Opaline/Features/Player/WatchViewController+Layout.swift
           import UIKit
 
@@ -72,17 +71,18 @@ jobs:
                   let collectionV = contentView, sv = scrollView
                   let cl = sv.contentLayoutGuide, frameLayout = sv.frameLayoutGuide
                   
-                  // Bọc vô hiệu hóa linter nếu có target phụ quét qua
                   // swiftlint:disable identifier_name
                   let (ps, sl, pc) = (sidebarContainer, scrollView, playerContainer)
                   // swiftlint:enable identifier_name
                   
-                  NSLayoutConstraint.activate([
+                  // Dùng compactMap để loại bỏ an toàn các giá trị Optional của NSLayoutConstraint
+                  let constraints: [NSLayoutConstraint?] = [
                       playerTopConstraint, playerLeadingConstraint,
                       playerTrailingConstraint, playerAspectConstraint,
                       scrollTopToPlayerConstraint, scrollTrailingConstraint,
                       sv.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor)
-                  ])
+                  ]
+                  NSLayoutConstraint.activate(constraints.compactMap { $0 })
               }
           }
           EOF
