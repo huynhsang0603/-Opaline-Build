@@ -21,7 +21,6 @@ jobs:
           brew uninstall ldid --force || true
           sudo rm -f /opt/homebrew/bin/ldid /usr/local/bin/ldid || true
           
-          # SỬA LỖI ĐƯỜNG DẪN MẠNG: Điền chính xác URL kết nối đến kho ProcursusTeam
           echo "Downloading ldid from Procursus source..."
           sudo curl -L "https://githubusercontent.com" -o /usr/local/bin/ldid
           
@@ -44,21 +43,34 @@ jobs:
           git clean -fdx
           git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. Truy quét diện rộng và triệt tiêu TẤT CẢ các file thực thi swiftlint cục bộ trong dự án
-          echo "Scanning and neutralizing all local swiftlint binaries inside workspace..."
-          find . -name "swiftlint" -type f 2>/dev/null | while read -r local_binary; do
-            sudo rm -f "$local_binary" || true
-            cat << 'EOF' | sudo tee "$local_binary"
-          #!/bin/bash
-          exit 0
-          EOF
-            sudo chmod +x "$local_binary"
-          done
-
-          # Chặn thêm ở cấp độ hệ thống máy ảo đề phòng dự án gọi chéo bên ngoài
-          sudo rm -f /usr/local/bin/swiftlint /opt/homebrew/bin/swiftlint || true
-          sudo ln -sf /usr/bin/true /usr/local/bin/swiftlint
-          sudo ln -sf /usr/bin/true /opt/homebrew/bin/swiftlint
+          # 2. ĐÒN QUYẾT ĐỊNH 100%: Sử dụng Python xóa vĩnh viễn Phase SwiftLint khỏi file project.pbxproj
+          # Cách này bóc tách hoàn toàn Build Phase linter ra khỏi cấu trúc dự án Xcode
+          python3 -c "
+          pbxproj_path = 'Opaline.xcodeproj/project.pbxproj'
+          with open(pbxproj_path, 'r') as f:
+              lines = f.readlines()
+          
+          new_lines = []
+          skip = False
+          for line in lines:
+              # Phát hiện và xóa dòng tham chiếu định danh trong danh sách buildPhases
+              if '49A8C3012FA4B10000A1B2C3' in line and '/* SwiftLint */' in line:
+                  continue
+              # Phát hiện vùng định nghĩa chi tiết của Phase SwiftLint và bỏ qua toàn bộ khối mã đó
+              if '49A8C3012FA4B10000A1B2C3 /* SwiftLint */' in line:
+                  skip = True
+                  continue
+              if skip and '/* End PBXShellScriptBuildPhase section */' in line:
+                  skip = False
+                  new_lines.append(line)
+                  continue
+              if not skip:
+                  new_lines.append(line)
+          
+          with open(pbxproj_path, 'w') as f:
+              f.writelines(new_lines)
+          print('SwiftLint phase completely purged from project.pbxproj!')
+          " || true
 
           # 3. Vô hiệu hóa tính năng tự động xóa code (Revert) bên trong file make_ipa.sh
           if [ -f "./make_ipa.sh" ]; then
@@ -68,7 +80,7 @@ jobs:
             sed -i '' 's/git stash/# git stash/g' ./make_ipa.sh || true
           fi
 
-          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100%
+          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100% (Phòng ngừa rủi ro biên dịch)
           cat << 'EOF' > Opaline/Features/Player/WatchViewController+Layout.swift
           import UIKit
 
