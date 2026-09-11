@@ -21,6 +21,7 @@ jobs:
           brew uninstall ldid --force || true
           sudo rm -f /opt/homebrew/bin/ldid /usr/local/bin/ldid || true
           
+          # SỬA LỖI ĐƯỜNG DẪN MẠNG: Điền chính xác URL kết nối đến kho ProcursusTeam
           echo "Downloading ldid from Procursus source..."
           sudo curl -L "https://githubusercontent.com" -o /usr/local/bin/ldid
           
@@ -166,7 +167,7 @@ jobs:
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
-      # 11. SỬA LỖI GHI ĐÈ FILE: Sử dụng chính xác lệnh upload-artifact để xuất file IPA tải về máy
+      # 11. Xuất và lưu trữ file .ipa lên giao diện để tải về máy
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
