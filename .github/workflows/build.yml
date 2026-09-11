@@ -18,19 +18,15 @@ jobs:
 
       - name: Install ldid-procursus manually
         run: |
-          # 1. Gỡ cài đặt ldid tiêu chuẩn nếu có
           brew uninstall ldid --force || true
           sudo rm -f /opt/homebrew/bin/ldid /usr/local/bin/ldid || true
           
-          # 2. Tải trực tiếp công cụ ldid từ nguồn Procursus phù hợp cho kiến trúc máy ảo ARM64/Intel
           echo "Downloading ldid from Procursus source..."
           sudo curl -L "https://githubusercontent.com" -o /usr/local/bin/ldid
           
-          # Nếu thư mục /usr/local/bin không được ưu tiên hoặc lỗi, tải thêm vào /opt/homebrew/bin
           sudo mkdir -p /opt/homebrew/bin
           sudo cp /usr/local/bin/ldid /opt/homebrew/bin/ldid
           
-          # Cấp quyền thực thi cho file hệ thống
           sudo chmod +x /usr/local/bin/ldid
           sudo chmod +x /opt/homebrew/bin/ldid
           
@@ -169,3 +165,14 @@ jobs:
           # 10. Chạy tập lệnh đóng gói ứng dụng IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
+
+      # 11. BƯỚC THU HOẠCH THÀNH PHẨM: Xuất và lưu trữ file .ipa lên giao diện để tải về máy
+      - name: Upload IPA Artifact
+        uses: actions/checkout@v4
+        if: always()
+        with:
+          name: Opaline-iOS-Application
+          path: |
+            *.ipa
+            build/*.ipa
+            output/*.ipa
