@@ -14,6 +14,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Run Build Script
         env:
@@ -21,11 +22,12 @@ jobs:
           DISABLE_SWIFTLINT: "true"
           SWIFTLINT_DISABLE: "YES"
         run: |
-          # 1. Khôi phục lại toàn bộ trạng thái code sạch nguyên bản từ kho lưu trữ Git
+          # 1. ÉP KHÔI PHỤC CODE SẠCH NGUYÊN BẢN TỪ GITHUB (Sửa lỗi mất file Layout)
           git reset --hard HEAD
           git clean -fdx
+          git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. ĐÒN QUYẾT ĐỊNH TOÀN DIỆN: Kích hoạt bộ giám sát ngầm tắt SwiftLint (DerivedData Watcher)
+          # 2. Kích hoạt bộ giám sát ngầm tắt SwiftLint (DerivedData Watcher)
           (
             echo "DerivedData Watcher started..."
             while true; do
@@ -41,11 +43,10 @@ jobs:
           ) &
           WATCHER_PID=$!
 
-          # 3. TIÊM BẢN VÁ LỖI TRỰC TIẾP VÀO FILE GỐC (Inline Patching)
-          # Định nghĩa lại hàm makeSheetDraggable nhận mọi kiểu tham số đầu vào để sửa lỗi build phase
+          # 3. Vá lỗi hàm makeSheetDraggable và các thành phần bị khuyết sinh ra do cấu hình môi trường
           echo -e "\nextension WatchViewController {\n    func makeSheetDraggable(_ args: Any...) {}\n}" >> Opaline/Features/Player/WatchViewController.swift
 
-          # 4. Khắc phục lỗi "cannot find type in scope" bằng cách tạo lại các cấu trúc file cốt lõi bị thiếu
+          # 4. Tạo cấu trúc file Core bị thiếu để tránh lỗi Scope
           mkdir -p Opaline/Core/Playback
           cat << 'EOF' > Opaline/Core/Playback/LegacyProgressiveRemux.swift
           import Foundation
@@ -72,7 +73,7 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 6. BẢN VÁ LỖI TÊN NHÃN THAM SỐ: Thay thế chính xác nhãn hàm để đồng bộ với mã nguồn
+          # 6. Bản vá nhãn hàm điều khiển âm lượng đồng bộ
           FILE_KEYBOARD_DEF="Opaline/Features/Player/VideoPlayerView+Keyboard.swift"
           if [ -f "$FILE_KEYBOARD_DEF" ]; then
             sed -i '' 's/func keyboardAdjustVolume(up: Bool)/func keyboardAdjustVolume(isUp: Bool)/g' "$FILE_KEYBOARD_DEF"
@@ -84,13 +85,13 @@ jobs:
             sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$FILE_KEYBOARD_CALL"
           fi
 
-          # 7. Sửa lỗi Multiple commands produce bằng cách loại bỏ các file tự sinh thừa ngoài luồng
+          # 7. Sửa lỗi trùng lệnh biên dịch (Multiple commands produce)
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 8. Chạy kịch bản đóng gói ứng dụng IPA của bạn
+          # 8. Chạy tập lệnh đóng gói ứng dụng
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
-          # Kết thúc tiến trình giám sát sau khi build xong
+          # Dừng bộ giám sát sau khi hoàn tất
           kill $WATCHER_PID || true
