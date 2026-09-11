@@ -30,33 +30,20 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 2. XÓA SẠCH FILE RÁC GÂY LỖI TRÙNG LẶP TÀI NGUYÊN (CpResource)
+          # 2. Sửa lỗi Multiple commands produce bằng cách xóa các file tự sinh trùng lặp (nếu có)
+          # Chỉ giữ lại duy nhất file gốc nằm trong thư mục Playback chuẩn
+          find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
+          find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
+
+          # 3. XÓA SẠCH FILE RÁC GÂY LỖI TRÙNG LẶP TÀI NGUYÊN (CpResource)
           find . -name ".swiftlint.yml" -delete || true
 
-          # 3. ĐÒN QUYẾT ĐỊNH: Đóng dấu hủy quét lỗi vào đầu TẤT CẢ các file .swift (Kể cả trong Submodules)
-          # Xử lý tuần tự từng file, không làm tràn bộ nhớ đệm máy ảo
+          # 4. ĐÒN QUYẾT ĐỊNH: Đóng dấu hủy quét lỗi vào đầu TẤT CẢ các file .swift
           find . -name "*.swift" -type f -exec sh -c '
             echo "// swiftlint:disable all" > "$1.tmp"
             cat "$1" >> "$1.tmp"
             mv "$1.tmp" "$1"
           ' _ {} \;
-
-          # 4. Tiêm bản vá cấu trúc các file bị thiếu trong scope
-          python3 -c "
-          import os
-          code_remux = 'import Foundation\npublic class LegacyProgressiveRemux {\n    public struct Remuxed {}\n    public var remuxes: [String: Remuxed] = [:]\n    public func attachRemux(_ remuxed: Remuxed, to id: String) {}\n}'
-          code_timeline = 'import Foundation\npublic class LegacyPlaybackTimeline {\n    public static func mark(_ label: String, detail: String = \"\") {}\n}'
-          
-          # Quét diện rộng: Thả file vào bất cứ thư mục nào liên quan đến Playback hoặc Core để đảm bảo Target nào cũng đọc được
-          for root, dirs, files in os.walk('.'):
-              folder_name = os.path.basename(root).lower()
-              if 'playback' in folder_name or 'core' in folder_name:
-                  try:
-                      with open(os.path.join(root, 'LegacyProgressiveRemux.swift'), 'w') as f: f.write(code_remux)
-                      with open(os.path.join(root, 'LegacyPlaybackTimeline.swift'), 'w') as f: f.write(code_timeline)
-                  except:
-                      pass
-          " || true
 
           # 5. Chạy script tạo IPA của bạn
           chmod +x ./make_ipa.sh
