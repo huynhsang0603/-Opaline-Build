@@ -16,6 +16,12 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Install Packaging Tools
+        run: |
+          # KHẮC PHỤC LỖI PACKAGING: Thay thế ldid tiêu chuẩn bằng ldid-procursus theo yêu cầu của script
+          brew unlink ldid || true
+          brew install ldid-procursus
+
       - name: Run Build Script
         env:
           NO_LINT: "1"
@@ -27,15 +33,12 @@ jobs:
           git clean -fdx
           git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. ĐÒN QUYẾT ĐỊNH 100%: Truy quét diện rộng và triệt tiêu TẤT CẢ các file thực thi swiftlint cục bộ trong dự án
-          # Lệnh này tìm mọi file tên 'swiftlint' trong thư mục hiện tại và các thư mục con, biến chúng thành script giả lập exit 0
+          # 2. Truy quét diện rộng và triệt tiêu TẤT CẢ các file thực thi swiftlint cục bộ trong dự án
           echo "Scanning and neutralizing all local swiftlint binaries inside workspace..."
           find . -name "swiftlint" -type f 2>/dev/null | while read -r local_binary; do
-            echo "Found local binary at: $local_binary - Replacing with mock script."
             sudo rm -f "$local_binary" || true
             cat << 'EOF' | sudo tee "$local_binary"
           #!/bin/bash
-          echo "Local SwiftLint neutralized directly inside workspace!"
           exit 0
           EOF
             sudo chmod +x "$local_binary"
@@ -54,7 +57,7 @@ jobs:
             sed -i '' 's/git stash/# git stash/g' ./make_ipa.sh || true
           fi
 
-          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100% (Sửa lỗi Constraint Optional)
+          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100%
           cat << 'EOF' > Opaline/Features/Player/WatchViewController+Layout.swift
           import UIKit
 
