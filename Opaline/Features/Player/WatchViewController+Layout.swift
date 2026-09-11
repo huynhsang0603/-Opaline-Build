@@ -173,7 +173,7 @@ extension WatchViewController {
 
     func activateScrollConstraints() {
         let collectionV = contentView, sv = scrollView
-        let cl = sv.contentLayoutGuide, fl = sv.frameLayoutGuide
+        let cl = sv.contentLayoutGuide, frameLayout = sv.frameLayoutGuide
         NSLayoutConstraint.activate(
             [
                 playerTopConstraint, playerLeadingConstraint,
