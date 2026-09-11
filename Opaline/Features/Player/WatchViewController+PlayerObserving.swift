@@ -17,20 +17,20 @@ extension WatchViewController {
     func addPlayerNotificationObservers(
         for item: AVPlayerItem
     ) {
-        let nc = NotificationCenter.default
-        nc.addObserver(
+        let notifyCenter = NotificationCenter.default
+        notifyCenter.addObserver(
             self,
             selector: #selector(playerItemDidFailToPlayToEnd(_:)),
             name: .AVPlayerItemFailedToPlayToEndTime,
             object: item
         )
-        nc.addObserver(
+        notifyCenter.addObserver(
             self,
             selector: #selector(playerItemNewErrorLogEntry(_:)),
             name: .AVPlayerItemNewErrorLogEntry,
             object: item
         )
-        nc.addObserver(
+        notifyCenter.addObserver(
             self,
             selector: #selector(playerItemDidPlayToEnd(_:)),
             name: .AVPlayerItemDidPlayToEndTime,
@@ -41,18 +41,18 @@ extension WatchViewController {
     func stopObservingPlayerItem(
         _ item: AVPlayerItem
     ) {
-        let nc = NotificationCenter.default
-        nc.removeObserver(
+        let notifyCenter = NotificationCenter.default
+        notifyCenter.removeObserver(
             self,
             name: .AVPlayerItemFailedToPlayToEndTime,
             object: item
         )
-        nc.removeObserver(
+        notifyCenter.removeObserver(
             self,
             name: .AVPlayerItemNewErrorLogEntry,
             object: item
         )
-        nc.removeObserver(
+        notifyCenter.removeObserver(
             self,
             name: .AVPlayerItemDidPlayToEndTime,
             object: item

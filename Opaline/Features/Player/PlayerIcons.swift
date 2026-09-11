@@ -163,11 +163,11 @@ extension PlayerIcons {
     }
 
     private static func drawCorners(_ corners: [CornerPoints], lineWidth: CGFloat) {
-        for cp in corners {
+        for ctrlPoint in corners {
             let path = UIBezierPath()
-            path.move(to: cp.horizontal)
-            path.addLine(to: cp.corner)
-            path.addLine(to: cp.vertical)
+            path.move(to: ctrlPoint.horizontal)
+            path.addLine(to: ctrlPoint.corner)
+            path.addLine(to: ctrlPoint.vertical)
             path.lineWidth = lineWidth
             path.lineCapStyle = .round
             path.lineJoinStyle = .round

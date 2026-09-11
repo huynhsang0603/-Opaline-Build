@@ -111,14 +111,14 @@ final class CommentReplyCell: UITableViewCell {
         contentView.addSubview(pill)
         pill.addSubview(chevron)
         pill.addSubview(label)
-        let cv = contentView
+        let contentV = contentView
         NSLayoutConstraint.activate([
-            pill.topAnchor.constraint(equalTo: cv.topAnchor, constant: 2),
-            pill.bottomAnchor.constraint(equalTo: cv.bottomAnchor, constant: -6),
+            pill.topAnchor.constraint(equalTo: contentV.topAnchor, constant: 2),
+            pill.bottomAnchor.constraint(equalTo: contentV.bottomAnchor, constant: -6),
             pill.leadingAnchor.constraint(
-                equalTo: cv.leadingAnchor, constant: 16 + CommentCell.replyIndent
+                equalTo: contentV.leadingAnchor, constant: 16 + CommentCell.replyIndent
             ),
-            pill.trailingAnchor.constraint(lessThanOrEqualTo: cv.trailingAnchor, constant: -16),
+            pill.trailingAnchor.constraint(lessThanOrEqualTo: contentV.trailingAnchor, constant: -16),
             pill.heightAnchor.constraint(equalToConstant: 32),
 
             chevron.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 12),
@@ -180,17 +180,17 @@ final class CommentStatusCell: UITableViewCell {
             item.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(item)
         }
-        let cv = contentView
+        let contentV = contentView
         let height = skeletonBox.heightAnchor.constraint(equalToConstant: 56)
         NSLayoutConstraint.activate([
-            messageLabel.topAnchor.constraint(equalTo: cv.topAnchor, constant: 12),
-            messageLabel.leadingAnchor.constraint(equalTo: cv.leadingAnchor, constant: 16),
-            messageLabel.trailingAnchor.constraint(equalTo: cv.trailingAnchor, constant: -16),
-            messageLabel.bottomAnchor.constraint(equalTo: cv.bottomAnchor, constant: -12),
-            skeletonBox.topAnchor.constraint(equalTo: cv.topAnchor, constant: 8),
-            skeletonBox.leadingAnchor.constraint(equalTo: cv.leadingAnchor, constant: 16),
-            skeletonBox.trailingAnchor.constraint(equalTo: cv.trailingAnchor, constant: -16),
-            skeletonBox.bottomAnchor.constraint(equalTo: cv.bottomAnchor, constant: -8),
+            messageLabel.topAnchor.constraint(equalTo: contentV.topAnchor, constant: 12),
+            messageLabel.leadingAnchor.constraint(equalTo: contentV.leadingAnchor, constant: 16),
+            messageLabel.trailingAnchor.constraint(equalTo: contentV.trailingAnchor, constant: -16),
+            messageLabel.bottomAnchor.constraint(equalTo: contentV.bottomAnchor, constant: -12),
+            skeletonBox.topAnchor.constraint(equalTo: contentV.topAnchor, constant: 8),
+            skeletonBox.leadingAnchor.constraint(equalTo: contentV.leadingAnchor, constant: 16),
+            skeletonBox.trailingAnchor.constraint(equalTo: contentV.trailingAnchor, constant: -16),
+            skeletonBox.bottomAnchor.constraint(equalTo: contentV.bottomAnchor, constant: -8),
             height
         ])
     }
