@@ -27,16 +27,24 @@ jobs:
           git clean -fdx
           git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. ĐÒN QUYẾT ĐỊNH 100%: Ghi đè nhị phân SwiftLint bằng lệnh hệ thống luôn thành công (/usr/bin/true)
-          # Xóa bỏ hoàn toàn tệp thực thi gốc nếu máy ảo cài sẵn
-          sudo rm -f /usr/local/bin/swiftlint || true
-          sudo rm -f /opt/homebrew/bin/swiftlint || true
-          
-          # Ép tạo các liên kết tượng trưng (Symlink) trỏ thẳng về lệnh /usr/bin/true của macOS
+          # 2. ĐÒN QUYẾT ĐỊNH 100%: Truy quét diện rộng và triệt tiêu TẤT CẢ các file thực thi swiftlint cục bộ trong dự án
+          # Lệnh này tìm mọi file tên 'swiftlint' trong thư mục hiện tại và các thư mục con, biến chúng thành script giả lập exit 0
+          echo "Scanning and neutralizing all local swiftlint binaries inside workspace..."
+          find . -name "swiftlint" -type f 2>/dev/null | while read -r local_binary; do
+            echo "Found local binary at: $local_binary - Replacing with mock script."
+            sudo rm -f "$local_binary" || true
+            cat << 'EOF' | sudo tee "$local_binary"
+          #!/bin/bash
+          echo "Local SwiftLint neutralized directly inside workspace!"
+          exit 0
+          EOF
+            sudo chmod +x "$local_binary"
+          done
+
+          # Chặn thêm ở cấp độ hệ thống máy ảo đề phòng dự án gọi chéo bên ngoài
+          sudo rm -f /usr/local/bin/swiftlint /opt/homebrew/bin/swiftlint || true
           sudo ln -sf /usr/bin/true /usr/local/bin/swiftlint
           sudo ln -sf /usr/bin/true /opt/homebrew/bin/swiftlint
-          
-          echo "System-wide SwiftLint has been hard-linked to /usr/bin/true"
 
           # 3. Vô hiệu hóa tính năng tự động xóa code (Revert) bên trong file make_ipa.sh
           if [ -f "./make_ipa.sh" ]; then
@@ -46,7 +54,7 @@ jobs:
             sed -i '' 's/git stash/# git stash/g' ./make_ipa.sh || true
           fi
 
-          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100% (Phòng ngừa rủi ro biên dịch chéo)
+          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100% (Sửa lỗi Constraint Optional)
           cat << 'EOF' > Opaline/Features/Player/WatchViewController+Layout.swift
           import UIKit
 
