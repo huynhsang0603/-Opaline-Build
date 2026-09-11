@@ -16,11 +16,25 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Install Packaging Tools
+      - name: Install ldid-procursus manually
         run: |
-          # KHẮC PHỤC LỖI PACKAGING: Thay thế ldid tiêu chuẩn bằng ldid-procursus theo yêu cầu của script
-          brew unlink ldid || true
-          brew install ldid-procursus
+          # 1. Gỡ cài đặt ldid tiêu chuẩn nếu có
+          brew uninstall ldid --force || true
+          sudo rm -f /opt/homebrew/bin/ldid /usr/local/bin/ldid || true
+          
+          # 2. Tải trực tiếp công cụ ldid từ nguồn Procursus phù hợp cho kiến trúc máy ảo ARM64/Intel
+          echo "Downloading ldid from Procursus source..."
+          sudo curl -L "https://githubusercontent.com" -o /usr/local/bin/ldid
+          
+          # Nếu thư mục /usr/local/bin không được ưu tiên hoặc lỗi, tải thêm vào /opt/homebrew/bin
+          sudo mkdir -p /opt/homebrew/bin
+          sudo cp /usr/local/bin/ldid /opt/homebrew/bin/ldid
+          
+          # Cấp quyền thực thi cho file hệ thống
+          sudo chmod +x /usr/local/bin/ldid
+          sudo chmod +x /opt/homebrew/bin/ldid
+          
+          echo "ldid-procursus installed successfully!"
 
       - name: Run Build Script
         env:
