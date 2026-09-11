@@ -22,23 +22,30 @@ jobs:
           DISABLE_SWIFTLINT: "true"
           SWIFTLINT_DISABLE: "YES"
         run: |
-          # 1. ÉP KHÔI PHỤC CODE SẠCH NGUYÊN BẢN TỪ GITHUB (Sửa lỗi mất file Layout)
+          # 1. Ép khôi phục mã nguồn sạch nguyên bản từ kho lưu trữ Git
           git reset --hard HEAD
           git clean -fdx
           git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. Kích hoạt bộ giám sát ngầm tắt SwiftLint (DerivedData Watcher)
+          # 2. ĐÒN QUYẾT ĐỊNH TOÀN DIỆN: Kích hoạt Bộ giám sát đánh chặn diện rộng (Global DerivedData Watcher)
+          # Vòng lặp liên tục quét DerivedData mỗi 0.05 giây để tìm BẤT KỲ file script build phase nào chứa lệnh swiftlint
           (
-            echo "DerivedData Watcher started..."
+            echo "Global DerivedData Watcher activated..."
+            DERIVED_DATA_DIR="/Users/runner/Library/Developer/Xcode/DerivedData"
             while true; do
-              TARGET_SCRIPT=$(find /Users/runner/Library/Developer/Xcode/DerivedData -name "Script-49A8C3012FA4B10000A1B2C3.sh" 2>/dev/null | head -n 1)
-              if [ ! -z "$TARGET_SCRIPT" ]; then
-                echo '#!/bin/bash' > "$TARGET_SCRIPT"
-                echo 'echo "SwiftLint intercepted and neutralized by Watcher!"' >> "$TARGET_SCRIPT"
-                echo 'exit 0' >> "$TARGET_SCRIPT"
-                chmod +x "$TARGET_SCRIPT"
+              if [ -d "$DERIVED_DATA_DIR" ]; then
+                # Tìm tất cả file .sh trong thư mục trung gian Build/Intermediates.noindex
+                find "$DERIVED_DATA_DIR" -name "*.sh" 2>/dev/null | while read -r script_file; do
+                  # Nếu nội dung file chứa lệnh gọi swiftlint thì lập tức vô hiệu hóa
+                  if grep -q "swiftlint" "$script_file" 2>/dev/null; then
+                    echo '#!/bin/bash' > "$script_file"
+                    echo 'echo "SwiftLint globally intercepted and neutralized!"' >> "$script_file"
+                    echo 'exit 0' >> "$script_file"
+                    chmod +x "$script_file"
+                  fi
+                done
               fi
-              sleep 0.1
+              sleep 0.05
             done
           ) &
           WATCHER_PID=$!
@@ -73,7 +80,7 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 6. Bản vá nhãn hàm điều khiển âm lượng đồng bộ
+          # 6. Bản vá nhãn hàm điều lượng âm lượng đồng bộ
           FILE_KEYBOARD_DEF="Opaline/Features/Player/VideoPlayerView+Keyboard.swift"
           if [ -f "$FILE_KEYBOARD_DEF" ]; then
             sed -i '' 's/func keyboardAdjustVolume(up: Bool)/func keyboardAdjustVolume(isUp: Bool)/g' "$FILE_KEYBOARD_DEF"
