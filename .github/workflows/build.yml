@@ -41,21 +41,29 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 3. Khôi phục lại toàn bộ trạng thái code sạch ban đầu từ kho chứa Git
-          git checkout -- . || true
+          # 3. ĐƯA MÃ NGUỒN VỀ TRẠNG THÁI SẠCH: Xóa bỏ tất cả các bản vá lỗi không chính xác trước đó
+          git reset --hard HEAD
+          git clean -fdx
 
-          # 4. ĐỒNG BỘ MÃ NGUỒN: Sửa nhãn tham số gọi hàm từ 'up:' thành 'isUp:' để khớp với thay đổi trước đó
-          # Khắc phục lỗi tại file WatchViewController+Keyboard.swift
-          TARGET_KEYBOARD="Opaline/Features/Player/WatchViewController+Keyboard.swift"
-          if [ -f "$TARGET_KEYBOARD" ]; then
-            sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$TARGET_KEYBOARD" || true
+          # 4. BẢN VÁ LỖI CHÍNH XÁC (Targeted Patch): Thay thế nhãn tham số mà không làm hỏng logic biến cục bộ
+          # Đổi tên khai báo tham số từ 'up: Bool' sang 'isUp: Bool'
+          FILE_KEYBOARD_DEF="Opaline/Features/Player/VideoPlayerView+Keyboard.swift"
+          if [ -f "$FILE_KEYBOARD_DEF" ]; then
+            sed -i '' 's/func keyboardAdjustVolume(up: Bool)/func keyboardAdjustVolume(isUp: Bool)/g' "$FILE_KEYBOARD_DEF"
+            sed -i '' 's/volume + (up ?/volume + (isUp ?/g' "$FILE_KEYBOARD_DEF"
+          fi
+
+          # Đổi tên nhãn khi gọi hàm từ 'up:' sang 'isUp:'
+          FILE_KEYBOARD_CALL="Opaline/Features/Player/WatchViewController+Keyboard.swift"
+          if [ -f "$FILE_KEYBOARD_CALL" ]; then
+            sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$FILE_KEYBOARD_CALL"
           fi
 
           # 5. Sửa lỗi Multiple commands produce bằng cách dọn dẹp các file tự sinh trùng lặp
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 6. Xóa bỏ file cấu hình linter cũ để tránh các tiến trình phụ gọi nhầm
+          # 6. Xóa bỏ file cấu hình linter để tránh bị gọi nhầm
           find . -name ".swiftlint.yml" -delete || true
 
           # 7. Chạy kịch bản đóng gói ứng dụng IPA của bạn
