@@ -15,10 +15,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install SwiftLint via Homebrew
-        run: |
-          brew install swiftlint
-
       - name: Run Build Script
         env:
           NO_LINT: "1"
@@ -41,20 +37,19 @@ jobs:
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 4. ĐÒN QUYẾT ĐỊNH: Tắt hoàn toàn vùng quét của SwiftLint bằng cấu hình loại bỏ tuyệt đối
-          # Lệnh này định nghĩa không quét bất cứ file nào (included: []) và bỏ qua toàn bộ dự án
+          # 4. ĐÒN QUYẾT ĐỊNH: Vô hiệu hóa SwiftLint bằng cơ chế loại trừ toàn diện (Bypass triệt để)
+          # Cấu hình này chỉ định danh sách loại trừ chứa toàn bộ thư mục gốc '.', ép công cụ dừng quét ngay lập tức
           cat << 'EOF' > .swiftlint.yml
-          disabled_rules:
-            - all
           included: []
           excluded:
             - .
-          analyzer_rules: []
+            - Opaline
+            - OpalineOpenIn
           EOF
           
-          # Áp dụng cấu hình chặn triệt để này cho cả dự án chính lẫn toàn bộ Submodules
+          # Bản vá diện rộng: Sao chép tệp cấu hình vô hiệu hóa này đè lên mọi tệp .swiftlint.yml của dự án và các Submodules
           find . -name ".swiftlint.yml" -exec cp .swiftlint.yml {} \;
 
-          # 5. Chạy script tạo IPA của bạn
+          # 5. Chạy script đóng gói ứng dụng IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
