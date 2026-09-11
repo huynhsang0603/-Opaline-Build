@@ -35,7 +35,7 @@ extension VideoPlayerView {
         )
     }
 
-    func keyboardAdjustVolume(up: Bool) {
+    func keyboardAdjustVolume(isUp: Bool) {
         guard let player = player else {
             return
         }
