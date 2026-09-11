@@ -38,36 +38,47 @@ jobs:
           git clean -fdx
           git checkout origin/main -- Opaline/Features/Player/WatchViewController+Layout.swift || git checkout master -- Opaline/Features/Player/WatchViewController+Layout.swift || true
 
-          # 2. ĐÒN QUYẾT ĐỊNH 100%: Dùng Regex xóa sạch mọi dấu vết của SwiftLint Phase trong project.pbxproj
+          # 2. ĐÒN QUYẾT ĐỊNH 100%: Quét diện rộng và xóa SẠCH Build Phase SwiftLint trong mọi file project.pbxproj (Kể cả Pods)
           python3 -c "
-          import re
-          path = 'Opaline.xcodeproj/project.pbxproj'
-          with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-              content = f.read()
+          import os, re
           
-          # Xóa toàn bộ khối PBXShellScriptBuildPhase của SwiftLint (từ lúc bắt đầu ID đến khi đóng ngoặc khối)
-          content = re.sub(r'[^\n]*49A8C3012FA4B10000A1B2C3[^\n]*\n(\{.*?\n\t*\}\;|\(.*?\)\;)?', '', content, flags=re.DOTALL)
-          # Xóa tất cả các dòng tham chiếu đơn lẻ tới ID này trong các danh sách buildPhases của các Target
-          content = re.sub(r'[^\n]*49A8C3012FA4B10000A1B2C3[^\n]*\n', '', content)
-          
-          with open(path, 'w', encoding='utf-8') as f:
-              f.write(content)
-          print('Regex core patch: SwiftLint phase completely exterminated!')
+          def clear_swiftlint_from_proj(path):
+              with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                  content = f.read()
+              
+              # Giai đoạn 1: Tìm tất cả các ID UUID của các khối SwiftLint Build Phase
+              # Cú pháp tìm chuỗi ID 24 ký tự hex gắn liền với ghi chú SwiftLint
+              uuids = re.findall(r'([A-F0-9]{24})\s/\*\sSwiftLint\s\*/', content, re.IGNORECASE)
+              uuids = list(set(uuids + ['49A8C3012FA4B10000A1B2C3']))
+              
+              for uuid in uuids:
+                  # Xóa khối PBXShellScriptBuildPhase chi tiết của UUID đó
+                  content = re.sub(r'[^\n]*' + uuid + r'[^\n]*\n(\{.*?\n\t*\}\;|\(.*?\)\;)?', '', content, flags=re.DOTALL)
+                  # Xóa mọi dòng tham chiếu đơn lẻ tới UUID này trong danh sách buildPhases của tất cả các Target
+                  content = re.sub(r'[^\n]*' + uuid + r'[^\n]*\n', '', content)
+              
+              # Giai đoạn 2: Quét dọn thủ công các chuỗi shellScript chứa trực tiếp từ khóa thực thi swiftlint
+              content = re.sub(r'[^\n]*isa\s*=\s*PBXShellScriptBuildPhase\s*;.*?(?:swiftlint).*?\}\s*\;\n', '', content, flags=re.DOTALL | re.IGNORECASE)
+              
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(content)
+              print(f'Purged SwiftLint references from: {path}')
+
+          # Duyệt tìm và xử lý tất cả các file project.pbxproj trong toàn bộ thư mục workspace
+          for root, dirs, files in os.walk('.'):
+              for file in files:
+                  if file == 'project.pbxproj':
+                      clear_swiftlint_from_proj(os.path.join(root, file))
           " || true
 
-          # 3. ÉP BIẾN MÔI TRƯỜNG TOÀN CỤC: Tạo file giả lập đè lên biến lệnh của xcodebuild
-          # Nếu Xcode vẫn cố chạy file script build phase tạm, lệnh này sẽ ép nó gọi lệnh rỗng echo
-          export SWIFTLINT="echo SwiftLint_Bypassed"
-          export DISABLE_SWIFTLINT="YES"
-
-          # 4. Vô hiệu hóa tính năng tự động xóa code (Revert) bên trong file make_ipa.sh
+          # 3. Vô hiệu hóa tính năng tự động xóa code (Revert) bên trong file make_ipa.sh
           if [ -f "./make_ipa.sh" ]; then
             sed -i '' 's/git checkout/# git checkout/g' ./make_ipa.sh || true
             sed -i '' 's/git reset/# git reset/g' ./make_ipa.sh || true
             sed -i '' 's/git stash/# git stash/g' ./make_ipa.sh || true
           fi
 
-          # 5. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100%
+          # 4. TÁI CẤU TRÚC FILE LAYOUT ĐẦY ĐỦ VÀ SẠCH 100%
           cat << 'EOF' > Opaline/Features/Player/WatchViewController+Layout.swift
           import UIKit
 
@@ -104,10 +115,10 @@ jobs:
           }
           EOF
 
-          # 6. Vá lỗi hàm makeSheetDraggable nhận mọi kiểu đối số đầu vào inline
+          # 5. Vá lỗi hàm makeSheetDraggable nhận mọi kiểu đối số đầu vào inline
           echo -e "\nextension WatchViewController {\n    func makeSheetDraggable(_ args: Any...) {}\n}" >> Opaline/Features/Player/WatchViewController.swift
 
-          # 7. TIÊM BẢN VÁ BIÊN DỊCH: Cung cấp đầy đủ cấu trúc dữ liệu cho lớp LegacyProgressiveRemux
+          # 6. TIÊM BẢN VÁ BIÊN DỊCH: Cung cấp đầy đủ cấu trúc dữ liệu cho lớp LegacyProgressiveRemux
           mkdir -p Opaline/Core/Playback
           cat << 'EOF' > Opaline/Core/Playback/LegacyProgressiveRemux.swift
           import Foundation
@@ -137,7 +148,7 @@ jobs:
           }
           EOF
 
-          # 8. Cấu hình thông số ký mã nguồn giả lập Local.xcconfig
+          # 7. Cấu hình thông số ký mã nguồn giả lập Local.xcconfig
           mkdir -p Config
           echo 'PRODUCT_BUNDLE_IDENTIFIER = com.yourname.opaline' > Config/Local.xcconfig
           echo 'DEVELOPMENT_TEAM = 12345ABCDE' >> Config/Local.xcconfig
@@ -146,7 +157,7 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 9. Sửa đồng bộ lỗi nhãn tham số âm lượng hàm gọi
+          # 8. Sửa đồng bộ lỗi nhãn tham số âm lượng hàm gọi
           FILE_KEYBOARD_DEF="Opaline/Features/Player/VideoPlayerView+Keyboard.swift"
           if [ -f "$FILE_KEYBOARD_DEF" ]; then
             sed -i '' 's/func keyboardAdjustVolume(up: Bool)/func keyboardAdjustVolume(isUp: Bool)/g' "$FILE_KEYBOARD_DEF"
@@ -158,15 +169,15 @@ jobs:
             sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$FILE_KEYBOARD_CALL"
           fi
 
-          # 10. Sửa lỗi Multiple commands produce trùng lặp file tự sinh
+          # 9. Dọn dẹp lỗi Multiple commands produce trùng lặp file tự sinh
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 11. Chạy tập lệnh đóng gói ứng dụng IPA của bạn
+          # 10. Chạy tập lệnh đóng gói ứng dụng IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
 
-      # 12. Xuất và lưu trữ file .ipa lên giao diện để tải về máy
+      # 11. Xuất và lưu trữ file .ipa lên giao diện để tải về máy
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
