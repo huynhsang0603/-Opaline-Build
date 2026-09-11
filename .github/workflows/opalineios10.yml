@@ -1,0 +1,46 @@
+name: Build Opaline iPad Air 1 iOS 10
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build_ios:
+    runs-on: macos-13
+
+    steps:
+    - name: Lay ma nguon tu Github
+      uses: actions/checkout@v4
+
+    - name: Su dung phien ban Xcode phu hop voi iOS 10
+      run: |
+        sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+        xcodebuild -version
+
+    - name: Ep he dieu hanh thap va cau truc chip arm64
+      run: |
+        # Sua target ve iOS 10.3
+        find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+        find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+        find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+        
+        # Ep kien truc build chi danh rieng cho chip arm64 de iPad Air 1 chay muot nhat
+        find . -name "project.pbxproj" -exec sed -i '' 's/ARCHS = "$(ARCHS_STANDARD)";/ARCHS = "arm64";/g' {} +
+        
+        # Chỉnh sửa file he thong ung dung
+        find . -name "Info.plist" -exec plutil -replace MinimumOSVersion -string "10.3" {} \;
+
+    - name: Chay lenh bien dich tao file IPA
+      run: |
+        chmod +x scripts/*.sh
+        chmod +x *.sh
+        ./make_ipa.sh || ./make_deb.sh
+
+    - name: Day thanh pham len Github cho phep tai ve
+      uses: actions/upload-artifact@v4
+      with:
+        name: Opaline-iOS10.3-IPA
+        path: |
+          *.ipa
+          *.deb
