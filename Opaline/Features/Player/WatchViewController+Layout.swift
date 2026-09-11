@@ -172,7 +172,7 @@ extension WatchViewController {
     }
 
     func activateScrollConstraints() {
-        let cv = contentView, sv = scrollView
+        let collectionV = contentView, sv = scrollView
         let cl = sv.contentLayoutGuide, fl = sv.frameLayoutGuide
         NSLayoutConstraint.activate(
             [
@@ -183,11 +183,11 @@ extension WatchViewController {
                 // scroll content aligns with the player edge on iPhone landscape.
                 sv.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
                 sv.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-                cv.topAnchor.constraint(equalTo: cl.topAnchor),
-                cv.leadingAnchor.constraint(equalTo: cl.leadingAnchor),
-                cv.trailingAnchor.constraint(equalTo: cl.trailingAnchor),
-                cv.bottomAnchor.constraint(equalTo: cl.bottomAnchor),
-                cv.widthAnchor.constraint(equalTo: fl.widthAnchor)
+                collectionV.topAnchor.constraint(equalTo: cl.topAnchor),
+                collectionV.leadingAnchor.constraint(equalTo: cl.leadingAnchor),
+                collectionV.trailingAnchor.constraint(equalTo: cl.trailingAnchor),
+                collectionV.bottomAnchor.constraint(equalTo: cl.bottomAnchor),
+                collectionV.widthAnchor.constraint(equalTo: fl.widthAnchor)
             ].compactMap { $0 }
         )
     }
@@ -212,44 +212,44 @@ extension WatchViewController {
     }
 
     func setupMetaViews() {
-        let cv = contentView
+        let collectionV = contentView
         for item in [titleLabel, metaLabel, descriptionLabel, descriptionButton] {
             item.translatesAutoresizingMaskIntoConstraints = false
         }
         titleLabel.font = UIFont.systemFont(ofSize: 20, weight: .semibold)
         titleLabel.numberOfLines = 0
-        cv.addSubview(titleLabel)
+        collectionV.addSubview(titleLabel)
         metaLabel.font = UIFont.systemFont(ofSize: 13)
         metaLabel.numberOfLines = 0
-        cv.addSubview(metaLabel)
+        collectionV.addSubview(metaLabel)
         LinkifiedText.configure(descriptionLabel)
         descriptionLabel.font = UIFont.systemFont(ofSize: 13)
         descriptionLabel.isHidden = true
         descriptionLabel.delegate = self
-        cv.addSubview(descriptionLabel)
+        collectionV.addSubview(descriptionLabel)
         descriptionButton.titleLabel?.font = UIFont.systemFont(ofSize: 12)
         descriptionButton.addTarget(self, action: #selector(toggleDescription), for: .touchUpInside)
         descriptionButton.setTitle(
             "player.description.more".localized, for: .normal
         )
-        cv.addSubview(descriptionButton)
+        collectionV.addSubview(descriptionButton)
     }
 
     func setupChannelViews() {
-        let cv = contentView
+        let collectionV = contentView
         for item in [channelAvatarView, channelNameLabel, channelMetaLabel, subscribeButton] {
             item.translatesAutoresizingMaskIntoConstraints = false
         }
         channelAvatarView.layer.cornerRadius = 22
         channelAvatarView.layer.masksToBounds = true
         channelAvatarView.isUserInteractionEnabled = true
-        cv.addSubview(channelAvatarView)
+        collectionV.addSubview(channelAvatarView)
         channelNameLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
         channelNameLabel.isUserInteractionEnabled = true
-        cv.addSubview(channelNameLabel)
+        collectionV.addSubview(channelNameLabel)
         channelMetaLabel.font = UIFont.systemFont(ofSize: 12)
         channelMetaLabel.numberOfLines = 2
-        cv.addSubview(channelMetaLabel)
+        collectionV.addSubview(channelMetaLabel)
         subscribeButton.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .semibold)
         subscribeButton.layer.cornerRadius = 18
         subscribeButton.contentEdgeInsets = UIEdgeInsets(top: 10, left: 18, bottom: 10, right: 18)
@@ -260,7 +260,7 @@ extension WatchViewController {
         let sel = #selector(subscribeButtonTapped)
         subscribeButton.addTarget(self, action: sel, for: .touchUpInside)
         subscribeButton.addTapFeedback()
-        cv.addSubview(subscribeButton)
+        collectionV.addSubview(subscribeButton)
     }
 
     func setupActionBar() {
@@ -303,9 +303,9 @@ extension WatchViewController {
     )
         -> UIStackView {
         if let img = LegacyAssets.image(iconName) {
-            let sz = CGSize(width: 22, height: 22)
-            let rendered = UIGraphicsImageRenderer(size: sz).image { _ in
-                img.draw(in: CGRect(origin: .zero, size: sz))
+            let viewSize = CGSize(width: 22, height: 22)
+            let rendered = UIGraphicsImageRenderer(size: viewSize).image { _ in
+                img.draw(in: CGRect(origin: .zero, size: viewSize))
             }
             btn.setImage(rendered.withRenderingMode(.alwaysTemplate), for: .normal)
         }
@@ -327,12 +327,12 @@ extension WatchViewController {
     }
 
     func setupCommentsSection() {
-        let cv = contentView
+        let collectionV = contentView
         for item in [commentsHeaderStack, commentsStackView] {
             item.translatesAutoresizingMaskIntoConstraints = false
         }
         setupCommentsHeader()
-        cv.addSubview(commentsHeaderStack)
+        collectionV.addSubview(commentsHeaderStack)
         commentsStackView.axis = .vertical
         commentsStackView.spacing = 12
         commentsStackView.isUserInteractionEnabled = true
@@ -348,7 +348,7 @@ extension WatchViewController {
                 UITapGestureRecognizer(target: self, action: expandTap)
             )
         }
-        cv.addSubview(commentsStackView)
+        collectionV.addSubview(commentsStackView)
         setupCommentsTableView()
         setupCommentsPanel()
         setupQueueBar()
@@ -365,17 +365,17 @@ extension WatchViewController {
     }
 
     private func setupCommentsTableView() {
-        let tv = commentsTableView
-        tv.register(CommentCell.self, forCellReuseIdentifier: CommentCell.reuseId)
-        tv.register(CommentReplyCell.self, forCellReuseIdentifier: CommentReplyCell.reuseId)
-        tv.register(CommentStatusCell.self, forCellReuseIdentifier: CommentStatusCell.reuseId)
-        tv.dataSource = self
-        tv.delegate = self
-        tv.rowHeight = UITableView.automaticDimension
-        tv.estimatedRowHeight = 80
-        tv.contentInsetAdjustmentBehavior = .never
+        let tableV = commentsTableView
+        tableV.register(CommentCell.self, forCellReuseIdentifier: CommentCell.reuseId)
+        tableV.register(CommentReplyCell.self, forCellReuseIdentifier: CommentReplyCell.reuseId)
+        tableV.register(CommentStatusCell.self, forCellReuseIdentifier: CommentStatusCell.reuseId)
+        tableV.dataSource = self
+        tableV.delegate = self
+        tableV.rowHeight = UITableView.automaticDimension
+        tableV.estimatedRowHeight = 80
+        tableV.contentInsetAdjustmentBehavior = .never
         // YouTube separates comments with air, not rules.
-        tv.separatorStyle = .none
+        tableV.separatorStyle = .none
     }
 
     /// Pinned to the bottom, above the safe area, over whatever is under it.
@@ -453,27 +453,27 @@ extension WatchViewController {
     }
 
     func setupRelatedCollection() {
-        let rv = relatedCollectionView
-        rv.register(VideoCell.self, forCellWithReuseIdentifier: VideoCell.reuseId)
-        rv.register(
+        let rootV = relatedCollectionView
+        rootV.register(VideoCell.self, forCellWithReuseIdentifier: VideoCell.reuseId)
+        rootV.register(
             PlaylistSectionHeaderView.self,
             forSupplementaryViewOfKind: UICollectionView
                 .elementKindSectionHeader,
             withReuseIdentifier:
             PlaylistSectionHeaderView.reuseIdentifier
         )
-        rv.dataSource = self
-        rv.delegate = self
-        rv.prefetchDataSource = self
-        rv.translatesAutoresizingMaskIntoConstraints = false
-        rv.isScrollEnabled = false
+        rootV.dataSource = self
+        rootV.delegate = self
+        rootV.prefetchDataSource = self
+        rootV.translatesAutoresizingMaskIntoConstraints = false
+        rootV.isScrollEnabled = false
         // Disable automatic inset adjustment: in portrait the outer scroll view manages
         // all scrolling; in landscape the sidebar is already positioned below the nav bar
         // via safeAreaLayoutGuide, so automatic adjustment would add a redundant top inset
         // that pushes the first related video down or off-screen.
-        rv.contentInsetAdjustmentBehavior = .never
-        contentView.addSubview(rv)
-        relatedSlot.height = rv.heightAnchor.constraint(equalToConstant: 0)
+        rootV.contentInsetAdjustmentBehavior = .never
+        contentView.addSubview(rootV)
+        relatedSlot.height = rootV.heightAnchor.constraint(equalToConstant: 0)
     }
 
     /// The nav bar does not always contribute its height to

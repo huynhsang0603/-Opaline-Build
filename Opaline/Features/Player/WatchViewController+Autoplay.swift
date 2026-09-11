@@ -77,13 +77,13 @@ extension WatchViewController {
         )
         autoplayOverlay?.removeFromSuperview()
         let overlay = makeAutoplayOverlay(for: video)
-        if let pv = videoPlayerView, pv.isFullscreen {
+        if let playerV = videoPlayerView, playerV.isFullscreen {
             overlay.translatesAutoresizingMaskIntoConstraints = true
-            overlay.frame = pv.bounds
+            overlay.frame = playerV.bounds
             overlay.autoresizingMask = [
                 .flexibleWidth, .flexibleHeight
             ]
-            pv.addSubview(overlay)
+            playerV.addSubview(overlay)
         } else {
             overlay
                 .translatesAutoresizingMaskIntoConstraints
