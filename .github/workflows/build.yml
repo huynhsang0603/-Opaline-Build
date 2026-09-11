@@ -22,7 +22,6 @@ jobs:
           SWIFTLINT_DISABLE: "YES"
         run: |
           # 1. ĐÒN QUYẾT ĐỊNH TRÊN HỆ THỐNG: Vô hiệu hóa lệnh thực thi swiftlint ở cấp độ máy ảo
-          # Khi Xcode gọi lệnh swiftlint, nó sẽ trúng một script rỗng luôn báo thành công (exit 0)
           sudo mkdir -p /usr/local/bin
           sudo touch /usr/local/bin/swiftlint
           sudo chmod +x /usr/local/bin/swiftlint
@@ -30,7 +29,6 @@ jobs:
           echo 'echo "SwiftLint is permanently disabled on CI/CD"' | sudo tee -a /usr/local/bin/swiftlint
           echo 'exit 0' | sudo tee -a /usr/local/bin/swiftlint
 
-          # Ghi đè thêm vào cả đường dẫn thư mục Homebrew để chặn mọi khả năng Xcode tìm thấy bản gốc
           sudo mkdir -p /opt/homebrew/bin
           sudo cp /usr/local/bin/swiftlint /opt/homebrew/bin/swiftlint
 
@@ -43,16 +41,23 @@ jobs:
           echo 'CODE_SIGN_IDENTITY = ' >> Config/Local.xcconfig
           echo 'PROVISIONING_PROFILE_SPECIFIER = ' >> Config/Local.xcconfig
 
-          # 3. Khôi phục lại toàn bộ trạng thái code sạch ban đầu
+          # 3. Khôi phục lại toàn bộ trạng thái code sạch ban đầu từ kho chứa Git
           git checkout -- . || true
 
-          # 4. Sửa lỗi Multiple commands produce bằng cách dọn dẹp các file tự sinh trùng lặp
+          # 4. ĐỒNG BỘ MÃ NGUỒN: Sửa nhãn tham số gọi hàm từ 'up:' thành 'isUp:' để khớp với thay đổi trước đó
+          # Khắc phục lỗi tại file WatchViewController+Keyboard.swift
+          TARGET_KEYBOARD="Opaline/Features/Player/WatchViewController+Keyboard.swift"
+          if [ -f "$TARGET_KEYBOARD" ]; then
+            sed -i '' 's/keyboardAdjustVolume(up:/keyboardAdjustVolume(isUp:/g' "$TARGET_KEYBOARD" || true
+          fi
+
+          # 5. Sửa lỗi Multiple commands produce bằng cách dọn dẹp các file tự sinh trùng lặp
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 5. Xóa bỏ file cấu hình linter để tránh bị gọi nhầm
+          # 6. Xóa bỏ file cấu hình linter cũ để tránh các tiến trình phụ gọi nhầm
           find . -name ".swiftlint.yml" -delete || true
 
-          # 6. Chạy kịch bản đóng gói ứng dụng IPA của bạn
+          # 7. Chạy kịch bản đóng gói ứng dụng IPA của bạn
           chmod +x ./make_ipa.sh
           ./make_ipa.sh
