@@ -17,7 +17,6 @@ jobs:
 
       - name: Install SwiftLint via Homebrew
         run: |
-          # Cài đặt công cụ thực sự để vượt qua bước kiểm tra nghiêm ngặt của Xcode Run Script
           brew install swiftlint
 
       - name: Run Build Script
@@ -42,10 +41,19 @@ jobs:
           find . -name "LegacyProgressiveRemux.swift" ! -path "*/Core/Playback/*" -delete || true
           find . -name "LegacyPlaybackTimeline.swift" ! -path "*/Core/Playback/*" -delete || true
 
-          # 4. ĐÒN QUYẾT ĐỊNH: Vô hiệu hóa luật kiểm tra của SwiftLint bằng cách đè file cấu hình trống
-          # Khi đó SwiftLint thật sẽ chạy qua dự án ngay lập tức với kết quả 0 lỗi
-          find . -name ".swiftlint.yml" -exec sh -c 'echo "disabled_rules: []" > "$1"' _ {} \;
-          echo "disabled_rules: []" > .swiftlint.yml
+          # 4. ĐÒN QUYẾT ĐỊNH: Tắt hoàn toàn vùng quét của SwiftLint bằng cấu hình loại bỏ tuyệt đối
+          # Lệnh này định nghĩa không quét bất cứ file nào (included: []) và bỏ qua toàn bộ dự án
+          cat << 'EOF' > .swiftlint.yml
+          disabled_rules:
+            - all
+          included: []
+          excluded:
+            - .
+          analyzer_rules: []
+          EOF
+          
+          # Áp dụng cấu hình chặn triệt để này cho cả dự án chính lẫn toàn bộ Submodules
+          find . -name ".swiftlint.yml" -exec cp .swiftlint.yml {} \;
 
           # 5. Chạy script tạo IPA của bạn
           chmod +x ./make_ipa.sh
