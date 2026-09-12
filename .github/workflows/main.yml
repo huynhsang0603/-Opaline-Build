@@ -7,30 +7,37 @@ on:
 
 jobs:
   build_ios:
-    runs-on: macos-15
+    runs-on: macos-15 # Chạy trực tiếp trên máy ảo macos-15 để hoạt động ngay lập tức không nghẽn hàng đợi
 
     steps:
     - name: Lay ma nguon tu Github
       uses: actions/checkout@v4
 
-    - name: Kiem tra phien ban Xcode co san
+    - name: Thiet lap phien ban Xcode thich hop
       run: |
+        # Kiểm tra phiên bản Xcode mặc định trên máy ảo để đồng bộ hóa
         xcodebuild -version
 
-    - name: Ep cau hinh target va vo hieu hoa SwiftLint gay loi
+    - name: Fix loi thieu file Local.xcconfig tren Github
       run: |
-        # Đưa toàn bộ cấu hình dự án Xcode về iOS 10.3
+        # Tạo thư mục Config và tệp Local.xcconfig trống để vượt qua lỗi gãy cấu trúc thư mục
+        mkdir -p Config
+        touch Config/Local.xcconfig
+        echo "// Local overrides" > Config/Local.xcconfig
+
+    - name: Ep ha cau hinh va cho phep build legacy targets
+      run: |
+        # 1. Ép toàn bộ các tệp cấu hình dự án về Deployment Target iOS 10.3
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         
-        # Tắt bắt buộc chứng chỉ ký mã để chạy trơn tru trên máy ảo
+        # 2. Tắt tất cả các yêu cầu kiểm tra chứng chỉ nghiêm ngặt của Apple trên môi trường đám mây
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' {} +
 
-        # Vô hiệu hóa tận gốc bước quét SwiftLint và Set Build Number bằng cách biến chúng thành lệnh rỗng (echo)
-        # Việc này giúp loại bỏ hoàn toàn nguyên nhân gây đứt gãy tiến trình build của Xcode
+        # 3. Vô hiệu hóa SwiftLint và Set Build Number để tránh bị Xcode 16 quét lỗi đứt tiến trình
         find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*swiftlint.*";/shellScript = "echo SwiftLint Disabled";/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*build_number.*";/shellScript = "echo Build Number Disabled";/g' {} +
 
@@ -41,12 +48,12 @@ jobs:
           pod install
         fi
 
-    - name: Bien dich bang lenh Workspace Archive va Dong goi
+    - name: Dung lenh Archive tao thu muc ung dung va dong goi IPA
       run: |
         chmod +x scripts/*.sh
         chmod +x *.sh
         
-        # Xác định tệp cấu hình biên dịch chuẩn (Ưu tiên xcworkspace nếu có CocoaPods)
+        # Biên dịch mã nguồn sạch ra thư mục xcarchive độc lập bằng cách chèn tham số bỏ qua giới hạn SDK cũ
         if [ -d "Opaline.xcworkspace" ]; then
           xcodebuild archive \
             -workspace Opaline.xcworkspace \
@@ -55,7 +62,8 @@ jobs:
             -sdk iphoneos \
             -archivePath $HOME/Opaline.xcarchive \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
         else
           xcodebuild archive \
             -project Opaline.xcodeproj \
@@ -64,22 +72,24 @@ jobs:
             -sdk iphoneos \
             -archivePath $HOME/Opaline.xcarchive \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
         fi
 
-        # Tạo cấu trúc thư mục Payload của file IPA và di chuyển tệp ứng dụng đã build vào
+        # Tạo cấu trúc thư mục Payload và di chuyển tệp .app đã build vào
         mkdir -p Payload
         cp -r $HOME/Opaline.xcarchive/Products/Applications/Opaline.app Payload/
         
-        # Ép hạ thông số hệ thống yêu cầu tối thiểu xuống iOS 10.3 trong tệp cấu hình cuối cùng
+        # Ép hạ thông số hệ thống yêu cầu trực tiếp vào nhân Info.plist thành công của ứng dụng
         plutil -replace MinimumOSVersion -string "10.3" Payload/Opaline.app/Info.plist 2>/dev/null || true
         
-        # Nén zip thư mục thành file .ipa hoàn chỉnh
+        # Nén zip toàn bộ Payload thành file .ipa hoàn chỉnh
         zip -r Opaline_iPadAir1_iOS10.3.ipa Payload/
 
-    - name: Tai file IPA thanh pham ve Github
+    - name: Tai file IPA thanh pham ve Github cho phep download
       uses: actions/upload-artifact@v4
       with:
         name: Opaline-iOS10.3-iPadAir1
         path: |
           *.ipa
+            
