@@ -62,7 +62,7 @@ plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP_PATH/Info.pl
 if [ -n "${BUILD_NUMBER:-}" ]; then
   plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP_PATH/Info.plist"
 fi
-
+plutil -replace MinimumOSVersion -string "10.0" "$APP_PATH/Info.plist"
 # The share-sheet extension's id must stay a suffix of the app's, or installd
 # rejects the bundle. Its version keys have to match the app's too.
 APPEX_PATH="$APP_PATH/PlugIns/OpalineOpenIn.appex"
@@ -72,6 +72,7 @@ if [ -d "$APPEX_PATH" ]; then
   if [ -n "${BUILD_NUMBER:-}" ]; then
     plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APPEX_PATH/Info.plist"
   fi
+  plutil -replace MinimumOSVersion -string "10.3" "$APPEX_PATH/Info.plist"
 fi
 
 # When the build runs unsigned (CI: CODE_SIGNING_ALLOWED=NO), Xcode embeds the
