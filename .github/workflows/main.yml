@@ -19,7 +19,7 @@ jobs:
       - name: Tai va nap thu cong SDK iOS 10.3
         run: |
           mkdir -p $HOME/SDKs
-          curl -L -o $HOME/SDKs/iPhoneOS10.3.sdk.tar.gz https://raw.github.com/okanon/iPhoneOS.sdk/releases/iPhoneOS10.3.sdk.tar.gz
+          curl -L -o $HOME/SDKs/iPhoneOS10.3.sdk.tar.gz https://github.com/okanon/iPhoneOS.sdk/releases/iPhoneOS10.3.sdk
           cd $HOME/SDKs
           tar -xzf iPhoneOS10.3.sdk.tar.gz
           XCODE_PATH=$(xcode-select -p)
