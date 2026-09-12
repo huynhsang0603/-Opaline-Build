@@ -61,8 +61,8 @@ plutil -replace CFBundleIdentifier -string "$RELEASE_BUNDLE_ID" "$APP_PATH/Info.
 plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP_PATH/Info.plist"
 if [ -n "${BUILD_NUMBER:-}" ]; then
   plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP_PATH/Info.plist"
+  plutil -replace MinimumOSVersion -string "10.3" "$APP_PATH/Info.plist"
 fi
-plutil -replace MinimumOSVersion -string "10.0" "$APP_PATH/Info.plist"
 # The share-sheet extension's id must stay a suffix of the app's, or installd
 # rejects the bundle. Its version keys have to match the app's too.
 APPEX_PATH="$APP_PATH/PlugIns/OpalineOpenIn.appex"
@@ -74,7 +74,6 @@ if [ -d "$APPEX_PATH" ]; then
   fi
   plutil -replace MinimumOSVersion -string "10.3" "$APPEX_PATH/Info.plist"
 fi
-
 # When the build runs unsigned (CI: CODE_SIGNING_ALLOWED=NO), Xcode embeds the
 # toolchain's Swift back-deploy dylibs verbatim, keeping their huge bitcode
 # segment; a signed build strips it. No-op when already stripped.
