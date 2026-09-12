@@ -15,24 +15,28 @@ jobs:
 
     - name: Kiem tra phien ban Xcode co san
       run: |
-        # Loại bỏ hoàn toàn lệnh sudo xcode-select cũ để không bị lỗi đường dẫn
         xcodebuild -version
 
-    - name: Ep cau hinh target va kien truc arm64
+    - name: Ep cau hinh target và fix loi kien truc Framework
       run: |
         # Đưa toàn bộ cấu hình dự án Xcode về iOS 10.3 thay vì iOS 12 hay 14.5
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         
-        # Ép kiến trúc arm64 thuần túy cho chip Apple A7 (iPad Air 1) để chạy mượt, loại bỏ armv7 32-bit cũ
-        find . -name "project.pbxproj" -exec sed -i '' 's/ARCHS = "$(ARCHS_STANDARD)";/ARCHS = "arm64";/g' {} +
-        find . -name "project.pbxproj" -exec sed -i '' 's/VALID_ARCHS = "armv7 arm64";/VALID_ARCHS = "arm64";/g' {} +
+        # Sửa cấu hình để bỏ qua xác thực chữ ký mã của Apple trên máy ảo, giúp xcodebuild chạy trơn tru không đòi chứng chỉ thật
+        find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
+        find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
 
-    - name: Chay lenh bien dich dong goi
+    - name: Don dep bo nho dem va Bien dich dong goi
       run: |
         chmod +x scripts/*.sh
         chmod +x *.sh
+        
+        # Thực hiện lệnh dọn dẹp cache cũ của Xcode trước khi biên dịch nhằm loại bỏ lỗi phantom dữ liệu
+        xcodebuild clean -project Opaline.xcodeproj -scheme Opaline 2>/dev/null || true
+        
+        # Chạy script đóng gói chính thức của bạn
         ./make_ipa.sh || ./make_deb.sh
 
     - name: Tai file IPA thanh pham ve Github
