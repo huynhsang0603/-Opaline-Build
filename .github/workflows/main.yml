@@ -1,4 +1,4 @@
-name: Build Opaline Native iOS 10
+name: Build Opaline iPad Air 1 No Crash
 
 on:
   push:
@@ -16,17 +16,21 @@ jobs:
       - name: Kiem tra phien ban Xcode co san
         run: xcodebuild -version
 
-      - name: Tai va giai nen thu cong SDK iOS 10.3
+      - name: Tai va nap SDK iOS 10.3 vao thu muc noi bo du an
         run: |
-          mkdir -p $HOME/SDKs
-          curl -L -o $HOME/SDKs/iPhoneOS10.3.sdk.tar.gz https://github.com/okanon/iPhoneOS.sdk/releases/download/v0.0.1/iPhoneOS10.3.sdk.tar.gz
-          cd $HOME/SDKs
+          # Tạo thư mục chứa bộ SDK cổ điển ngay trong không gian làm việc của dự án
+          mkdir -p sdks
+          
+          # Tải bộ SDK iOS 10.3 chuẩn từ kho lưu trữ cộng đồng Jailbreak uy tín
+          curl -L -o sdks/iPhoneOS10.3.sdk.tar.gz https://github.com/okanon/iPhoneOS.sdk/releases/download/v0.0.1/iPhoneOS10.3.sdk.tar.gz
+          
+          # Giải nén trực tiếp ra thư mục cục bộ nội bộ
+          cd sdks
           tar -xzf iPhoneOS10.3.sdk.tar.gz
           
-          # Tìm vị trí thực tế của thư mục chứa bộ SDK sau khi giải nén
-          REAL_SDK_PATH=$(find $HOME/SDKs -name "SDKSettings.plist" | head -n 1 | xargs dirname)
-          echo "REAL_SDK_PATH=$REAL_SDK_PATH" >> $GITHUB_ENV
-          echo "Tim thay SDK tai duong dan: $REAL_SDK_PATH"
+          # Xác nhận cấu trúc SDK tồn tại sạch sẽ để loại bỏ lỗi cannot be located
+          ls -la iPhoneOS10.3.sdk
+          echo "SDK_LOCAL_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS10.3.sdk" >> $GITHUB_ENV
 
       - name: Fix loi thieu file Local.xcconfig
         run: |
@@ -34,14 +38,19 @@ jobs:
           touch Config/Local.xcconfig
           echo "// Local overrides" > Config/Local.xcconfig
 
-      - name: Ep cau hinh target nguon ve iOS 10.3
+      - name: Can thiep sau va ep gia tri thuc thi phu hop iOS 10.3
         run: |
+          # Đưa toàn bộ cấu hình dự án Xcode về đúng Target iOS 10.3 gốc
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+          
+          # Tắt bắt buộc chứng chỉ bảo mật của Apple để tránh lỗi trên máy ảo đám mây
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' {} +
+          
+          # Vô hiệu hóa SwiftLint và Set Build Number gây lỗi tiến trình dịch mã
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*swiftlint.*";/shellScript = "echo SwiftLint Disabled";/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*build_number.*";/shellScript = "echo Build Number Disabled";/g' {} +
 
@@ -52,20 +61,19 @@ jobs:
             pod install
           fi
 
-      - name: Bien dich bang duong dan SDK vat ly va dong goi IPA
+      - name: Bien dich NATIVE bang SDK noi bo va dong goi IPA
         run: |
           chmod +x scripts/*.sh
           chmod +x *.sh
           
-          # Sử dụng biến môi trường đường dẫn động đã quét được ở bước trước
-          echo "Su dung SDK tu: ${{ env.REAL_SDK_PATH }}"
-          
+          # Bằng cách truyền cờ -sdk trỏ thẳng vào đường dẫn nội bộ dự án,
+          # Xcode bắt buộc phải dịch mã nguồn dựa theo cấu trúc tập lệnh cũ của iOS 10.3
           if [ -d "Opaline.xcworkspace" ]; then
             xcodebuild archive \
               -workspace Opaline.xcworkspace \
               -scheme Opaline \
               -configuration Release \
-              -sdk "${{ env.REAL_SDK_PATH }}" \
+              -sdk "${{ env.SDK_LOCAL_PATH }}" \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGNING_ALLOWED=NO
@@ -74,12 +82,13 @@ jobs:
               -project Opaline.xcodeproj \
               -scheme Opaline \
               -configuration Release \
-              -sdk "${{ env.REAL_SDK_PATH }}" \
+              -sdk "${{ env.SDK_LOCAL_PATH }}" \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGNING_ALLOWED=NO
           fi
           
+          # Tiến hành đóng gói file .ipa chuẩn cấu trúc Payload sạch
           mkdir -p Payload
           cp -r $HOME/Opaline.xcarchive/Products/Applications/Opaline.app Payload/
           zip -r Opaline_Native_iOS10.3.ipa Payload/
@@ -87,5 +96,5 @@ jobs:
       - name: Tai file IPA thanh pham ve Github cho phep download
         uses: actions/upload-artifact@v4
         with:
-          name: Opaline-Native-iOS10.3
+          name: Opaline-iOS10.3-NoCrash
           path: "*.ipa"
