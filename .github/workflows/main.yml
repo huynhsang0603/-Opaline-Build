@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_ios:
-    runs-on: macos-15
+    runs-on: macos-13
 
     steps:
     - name: Lay ma nguon tu Github
@@ -24,34 +24,53 @@ jobs:
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         
-        # Tat hoan toan bat buoc chu ky ma de vuot qua loi kiem tra Provisioning Profile tren may ao Github
+        # Tắt bắt buộc chứng chỉ ký mã để chạy mượt mà trên máy ảo không tài khoản Developer
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' {} +
 
-    - name: Bien dich e cuong bang lenh Archive va Dong goi
+    - name: Cai dat thu vien CocoaPods con thieu
+      run: |
+        # Kiểm tra nếu dự án có Podfile thì tiến hành cài đặt để tránh lỗi thiếu thư viện dylib khi compile
+        if [ -f Podfile ]; then
+          pod repo update
+          pod install
+        fi
+
+    - name: Bien dich bang lenh Workspace Archive va Dong goi
       run: |
         chmod +x scripts/*.sh
         chmod +x *.sh
         
-        # 1. Ép Xcode biên dịch mã nguồn sạch ra thư mục lưu trữ Archive cố định để tránh lỗi mất file .app
-        xcodebuild archive \
-          -project Opaline.xcodeproj \
-          -scheme Opaline \
-          -configuration Release \
-          -sdk iphoneos \
-          -archivePath $HOME/Opaline.xcarchive \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO
+        # Xác định tệp cấu hình biên dịch chuẩn (Ưu tiên xcworkspace nếu có CocoaPods)
+        if [ -d "Opaline.xcworkspace" ]; then
+          xcodebuild archive \
+            -workspace Opaline.xcworkspace \
+            -scheme Opaline \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $HOME/Opaline.xcarchive \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+        else
+          xcodebuild archive \
+            -project Opaline.xcodeproj \
+            -scheme Opaline \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath $HOME/Opaline.xcarchive \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+        fi
 
-        # 2. Tạo cấu trúc thư mục Payload chuẩn của file IPA và di chuyển file .app đã biên dịch vào bên trong
+        # Tạo cấu trúc thư mục Payload của file IPA và di chuyển tệp ứng dụng đã build vào
         mkdir -p Payload
         cp -r $HOME/Opaline.xcarchive/Products/Applications/Opaline.app Payload/
         
-        # 3. Thực hiện sửa đổi file Info.plist chuẩn đã được lấy từ nhân biên dịch ra iOS 10.3
+        # Ép hạ thông số hệ thống yêu cầu tối thiểu xuống iOS 10.3 trong tệp cấu hình cuối cùng
         plutil -replace MinimumOSVersion -string "10.3" Payload/Opaline.app/Info.plist 2>/dev/null || true
         
-        # 4. Nén zip toàn bộ thư mục Payload này thành file cài đặt .ipa hoàn chỉnh
+        # Nén zip thư mục thành file .ipa hoàn chỉnh
         zip -r Opaline_iPadAir1_iOS10.3.ipa Payload/
 
     - name: Tai file IPA thanh pham ve Github
