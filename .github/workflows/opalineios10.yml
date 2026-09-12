@@ -1,4 +1,4 @@
-name: Build Opaline iPad Air 1 iOS 10
+name: Build Opaline iPad Air 1
 
 on:
   push:
@@ -13,29 +13,29 @@ jobs:
     - name: Lay ma nguon tu Github
       uses: actions/checkout@v4
 
-    - name: Su dung phien ban Xcode phu hop voi iOS 10
+    - name: Su dung phien ban Xcode 14 phu hop iOS 10
       run: |
         sudo xcode-select -switch /Applications/Xcode_14.3.1.app
         xcodebuild -version
 
-    - name: Ep cau hinh arm64 va Deployment Target 10.3
+    - name: Ep cau hinh target va kien truc arm64
       run: |
-        # Ep tat ca target thiet lap trong file project ve iOS 10.3
+        # Đưa toàn bộ cấu hình dự án Xcode về iOS 10.3 thay vì iOS 12 hay 14.5
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         
-        # Ep kien truc build chi danh rieng cho chip arm64 de iPad Air 1 chay muot nhat, loai bo armv7 cu
+        # Ép kiến trúc arm64 thuần túy cho chip Apple A7 (iPad Air 1) để chạy mượt, loại bỏ armv7 32-bit cũ
         find . -name "project.pbxproj" -exec sed -i '' 's/ARCHS = "$(ARCHS_STANDARD)";/ARCHS = "arm64";/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/VALID_ARCHS = "armv7 arm64";/VALID_ARCHS = "arm64";/g' {} +
 
-    - name: Chay lenh bien dich tao file IPA
+    - name: Chay lenh bien dich dong goi
       run: |
         chmod +x scripts/*.sh
         chmod +x *.sh
         ./make_ipa.sh || ./make_deb.sh
 
-    - name: Luu file IPA sach ve Github
+    - name: Tai file IPA thanh pham ve Github
       uses: actions/upload-artifact@v4
       with:
         name: Opaline-iOS10.3-ThanhPham
