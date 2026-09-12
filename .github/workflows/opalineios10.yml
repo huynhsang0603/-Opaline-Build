@@ -18,18 +18,16 @@ jobs:
         sudo xcode-select -switch /Applications/Xcode_14.3.1.app
         xcodebuild -version
 
-    - name: Ep he dieu hanh thap va cau truc chip arm64
+    - name: Ep cau hinh arm64 va Deployment Target 10.3
       run: |
-        # Sua target ve iOS 10.3
+        # Ep tat ca target thiet lap trong file project ve iOS 10.3
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
         
-        # Ep kien truc build chi danh rieng cho chip arm64 de iPad Air 1 chay muot nhat
+        # Ep kien truc build chi danh rieng cho chip arm64 de iPad Air 1 chay muot nhat, loai bo armv7 cu
         find . -name "project.pbxproj" -exec sed -i '' 's/ARCHS = "$(ARCHS_STANDARD)";/ARCHS = "arm64";/g' {} +
-        
-        # Chỉnh sửa file he thong ung dung
-        find . -name "Info.plist" -exec plutil -replace MinimumOSVersion -string "10.3" {} \;
+        find . -name "project.pbxproj" -exec sed -i '' 's/VALID_ARCHS = "armv7 arm64";/VALID_ARCHS = "arm64";/g' {} +
 
     - name: Chay lenh bien dich tao file IPA
       run: |
@@ -37,10 +35,10 @@ jobs:
         chmod +x *.sh
         ./make_ipa.sh || ./make_deb.sh
 
-    - name: Day thanh pham len Github cho phep tai ve
+    - name: Luu file IPA sach ve Github
       uses: actions/upload-artifact@v4
       with:
-        name: Opaline-iOS10.3-IPA
+        name: Opaline-iOS10.3-ThanhPham
         path: |
           *.ipa
           *.deb
