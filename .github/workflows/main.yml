@@ -16,14 +16,15 @@ jobs:
       - name: Kiem tra phien ban Xcode co san
         run: xcodebuild -version
 
-      - name: Tai va nap thu cong SDK iOS 10.3
+      - name: Tai va giai nen thu cong SDK iOS 10.3
         run: |
           mkdir -p $HOME/SDKs
-          curl -L -o $HOME/SDKs/iPhoneOS10.3.sdk.tar.gz https://github.com/okanon/iPhoneOS.sdk/releases/download/v0.0.1/iPhoneOS10.3.sdk.tar.gz
+          # Tải bộ SDK chuẩn định dạng tar.gz từ okanon Repo công đồng
+          curl -L -o $HOME/SDKs/iPhoneOS10.3.sdk.tar.gz https://github.com
           cd $HOME/SDKs
           tar -xzf iPhoneOS10.3.sdk.tar.gz
-          XCODE_PATH=$(xcode-select -p)
-          sudo ln -s $HOME/SDKs/iPhoneOS10.3.sdk $XCODE_PATH/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.3.sdk
+          # Kiểm tra cấu trúc thư mục để đảm bảo giải nén thành công
+          ls -la $HOME/SDKs/iPhoneOS10.3.sdk
 
       - name: Fix loi thieu file Local.xcconfig
         run: |
@@ -33,12 +34,17 @@ jobs:
 
       - name: Ep cau hinh target nguon ve iOS 10.3
         run: |
+          # Đưa cấu hình Deployment Target trong project file về iOS 10.3
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+          
+          # Tắt xác thực chứng chỉ ký mã để chạy trơn tru trên máy ảo
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' {} +
+          
+          # Vô hiệu hóa SwiftLint và Set Build Number gây đứt tiến trình dịch mã
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*swiftlint.*";/shellScript = "echo SwiftLint Disabled";/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*build_number.*";/shellScript = "echo Build Number Disabled";/g' {} +
 
@@ -49,15 +55,36 @@ jobs:
             pod install
           fi
 
-      - name: Bien dich NATIVE bang SDK iOS 10.3 va dong goi IPA
+      - name: Bien dich bang duong dan SDK vat ly va dong goi IPA
         run: |
           chmod +x scripts/*.sh
           chmod +x *.sh
+          
+          # Định nghĩa biến đường dẫn tuyệt đối tới bộ SDK iOS 10.3 vừa giải nén
+          SDK_PATH="$HOME/SDKs/iPhoneOS10.3.sdk"
+          
+          # Ép tham số -sdk trỏ thẳng vào đường dẫn thư mục vật lý để vượt qua lỗi cấm định vị của Xcode
           if [ -d "Opaline.xcworkspace" ]; then
-            xcodebuild archive -workspace Opaline.xcworkspace -scheme Opaline -configuration Release -sdk iphoneos10.3 -archivePath $HOME/Opaline.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            xcodebuild archive \
+              -workspace Opaline.xcworkspace \
+              -scheme Opaline \
+              -configuration Release \
+              -sdk "$SDK_PATH" \
+              -archivePath $HOME/Opaline.xcarchive \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
           else
-            xcodebuild archive -project Opaline.xcodeproj -scheme Opaline -configuration Release -sdk iphoneos10.3 -archivePath $HOME/Opaline.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            xcodebuild archive \
+              -project Opaline.xcodeproj \
+              -scheme Opaline \
+              -configuration Release \
+              -sdk "$SDK_PATH" \
+              -archivePath $HOME/Opaline.xcarchive \
+              CODE_SIGNING_REQUIRED=NO \
+              CODE_SIGNING_ALLOWED=NO
           fi
+          
+          # Đóng gói sản phẩm cấu trúc Payload chuẩn của file IPA
           mkdir -p Payload
           cp -r $HOME/Opaline.xcarchive/Products/Applications/Opaline.app Payload/
           zip -r Opaline_Native_iOS10.3.ipa Payload/
