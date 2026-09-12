@@ -7,15 +7,15 @@ on:
 
 jobs:
   build_ios:
-    runs-on: macos-15
+    runs-on: macos-13
 
     steps:
     - name: Lay ma nguon tu Github
       uses: actions/checkout@v4
 
-    - name: Su dung phien ban Xcode 14 phu hop iOS 10
+    - name: Kiem tra phien ban Xcode co san
       run: |
-        sudo xcode-select -switch /Applications/Xcode_14.3.1.app
+        # Loại bỏ hoàn toàn lệnh sudo xcode-select cũ để không bị lỗi đường dẫn
         xcodebuild -version
 
     - name: Ep cau hinh target va kien truc arm64
