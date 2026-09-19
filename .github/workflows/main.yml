@@ -7,21 +7,22 @@ on:
 
 jobs:
   build_ios:
-    # 1. Đổi sang macos-15 để lấy Xcode 16 xử lý lỗi Format (77)
-    runs-on: macos-15
+    # 1. Quay lại macos-13 để có sẵn các bộ SDK và Xcode phiên bản cũ (Xcode 14/15)
+    runs-on: macos-13
 
     steps:
       - name: Lay ma nguon tu Github
         uses: actions/checkout@v4
 
-      # 2. Kích hoạt Xcode 16 để khớp với định dạng project mới
-      - name: Kich hoat Xcode 16
-        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
-
-      # 3. Ép định dạng file project về bản cũ hơn để tránh xung đột cấu trúc
-      - name: Ha cap dinh dang Xcode Project Format
+      # 2. Ép định dạng file project về objectVersion = 54 (Tương thích tốt với Xcode 14)
+      - name: Ha cap dinh dang Xcode Project Format sau cho Xcode cu
         run: |
-          find . -name "project.pbxproj" -exec sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/objectVersion = 77;/objectVersion = 54;/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/objectVersion = 56;/objectVersion = 54;/g' {} +
+
+      # 3. Kích hoạt Xcode 14.3.1 (Hỗ trợ tốt nhất các bản vá iOS thấp và kiến trúc cũ)
+      - name: Kich hoat Xcode 14
+        run: sudo xcode-select -s /Applications/Xcode_14.3.1.app/Contents/Developer
 
       - name: Fix loi thieu file Local.xcconfig
         run: |
@@ -32,18 +33,14 @@ jobs:
       - name: Can thiep sau va ep gia tri thuc thi phu hop iOS 10.3
         run: |
           # Đưa toàn bộ cấu hình dự án Xcode về đúng Target iOS 10.3 gốc
-          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
-          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
-          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 16.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
-          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 17.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
-          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           
           # Tắt bắt buộc chứng chỉ bảo mật của Apple để tránh lỗi trên máy ảo đám mây
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_REQUIRED = YES;/CODE_SIGNING_REQUIRED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGNING_ALLOWED = YES;/CODE_SIGNING_ALLOWED = NO;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' {} +
           
-          # Vô hiệu hóa SwiftLint và Set Build Number gây lỗi tiến trình dịch mã
+          # Sửa triệt để lệnh vô hiệu hóa SwiftLint và Set Build Number bằng cách xóa hẳn dòng gọi script
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*swiftlint.*";/shellScript = "echo SwiftLint Disabled";/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/shellScript = ".*build_number.*";/shellScript = "echo Build Number Disabled";/g' {} +
 
@@ -59,7 +56,6 @@ jobs:
           chmod +x scripts/*.sh || true
           chmod +x *.sh || true
           
-          # Thay thế biến env trống bằng tham số chuẩn 'iphoneos' để Xcode tự nhận diện SDK
           if [ -d "Opaline.xcworkspace" ]; then
             xcodebuild archive \
               -workspace Opaline.xcworkspace \
@@ -68,7 +64,8 @@ jobs:
               -sdk iphoneos \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGNING_ALLOWED=NO
+              CODE_SIGNING_ALLOWED=NO \
+              COMPILER_INDEX_STORE_ENABLE=NO
           else
             xcodebuild archive \
               -project Opaline.xcodeproj \
@@ -77,7 +74,8 @@ jobs:
               -sdk iphoneos \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
-              CODE_SIGNING_ALLOWED=NO
+              CODE_SIGNING_ALLOWED=NO \
+              COMPILER_INDEX_STORE_ENABLE=NO
           fi
           
           # Tiến hành đóng gói file .ipa chuẩn cấu trúc Payload sạch
