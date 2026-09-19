@@ -16,21 +16,7 @@ jobs:
       - name: Kiem tra phien ban Xcode co san
         run: xcodebuild -version
 
-      - name: Tai va nap SDK iOS 10.3 vao thu muc noi bo du an
-        run: |
-          # Tạo thư mục chứa bộ SDK cổ điển ngay trong không gian làm việc của dự án
-          mkdir -p sdks
-          
-          # Tải bộ SDK iOS 10.3 chuẩn từ kho lưu trữ cộng đồng Jailbreak uy tín
-          curl -L -o sdks/iPhoneOS10.3.sdk.tar.gz https://github.com/okanon/iPhoneOS.sdk/releases/download/v0.0.1/iPhoneOS10.3.sdk.tar.gz
-          
-          # Giải nén trực tiếp ra thư mục cục bộ nội bộ
-          cd sdks
-          tar -xzf iPhoneOS10.3.sdk.tar.gz
-          
-          # Xác nhận cấu trúc SDK tồn tại sạch sẽ để loại bỏ lỗi cannot be located
-          ls -la iPhoneOS10.3.sdk
-          echo "SDK_LOCAL_PATH=$GITHUB_WORKSPACE/sdks/iPhoneOS10.3.sdk" >> $GITHUB_ENV
+  
 
       - name: Fix loi thieu file Local.xcconfig
         run: |
