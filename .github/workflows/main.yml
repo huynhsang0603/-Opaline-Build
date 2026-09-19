@@ -7,16 +7,21 @@ on:
 
 jobs:
   build_ios:
-    runs-on: macos-14
+    # 1. Đổi sang macos-15 để lấy Xcode 16 xử lý lỗi Format (77)
+    runs-on: macos-15
 
     steps:
       - name: Lay ma nguon tu Github
         uses: actions/checkout@v4
 
-      - name: Kiem tra phien ban Xcode co san
-        run: xcodebuild -version
+      # 2. Kích hoạt Xcode 16 để khớp với định dạng project mới
+      - name: Kich hoat Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
 
-  
+      # 3. Ép định dạng file project về bản cũ hơn để tránh xung đột cấu trúc
+      - name: Ha cap dinh dang Xcode Project Format
+        run: |
+          find . -name "project.pbxproj" -exec sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' {} +
 
       - name: Fix loi thieu file Local.xcconfig
         run: |
@@ -29,6 +34,8 @@ jobs:
           # Đưa toàn bộ cấu hình dự án Xcode về đúng Target iOS 10.3 gốc
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 12.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.5;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 16.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
+          find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 17.0;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           find . -name "project.pbxproj" -exec sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 9.3;/IPHONEOS_DEPLOYMENT_TARGET = 10.3;/g' {} +
           
           # Tắt bắt buộc chứng chỉ bảo mật của Apple để tránh lỗi trên máy ảo đám mây
@@ -47,19 +54,18 @@ jobs:
             pod install
           fi
 
-      - name: Bien dich NATIVE bang SDK noi bo va dong goi IPA
+      - name: Bien dich NATIVE bang SDK va dong goi IPA
         run: |
-          chmod +x scripts/*.sh
-          chmod +x *.sh
+          chmod +x scripts/*.sh || true
+          chmod +x *.sh || true
           
-          # Bằng cách truyền cờ -sdk trỏ thẳng vào đường dẫn nội bộ dự án,
-          # Xcode bắt buộc phải dịch mã nguồn dựa theo cấu trúc tập lệnh cũ của iOS 10.3
+          # Thay thế biến env trống bằng tham số chuẩn 'iphoneos' để Xcode tự nhận diện SDK
           if [ -d "Opaline.xcworkspace" ]; then
             xcodebuild archive \
               -workspace Opaline.xcworkspace \
               -scheme Opaline \
               -configuration Release \
-              -sdk "${{ env.SDK_LOCAL_PATH }}" \
+              -sdk iphoneos \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGNING_ALLOWED=NO
@@ -68,7 +74,7 @@ jobs:
               -project Opaline.xcodeproj \
               -scheme Opaline \
               -configuration Release \
-              -sdk "${{ env.SDK_LOCAL_PATH }}" \
+              -sdk iphoneos \
               -archivePath $HOME/Opaline.xcarchive \
               CODE_SIGNING_REQUIRED=NO \
               CODE_SIGNING_ALLOWED=NO
@@ -82,5 +88,5 @@ jobs:
       - name: Tai file IPA thanh pham ve Github cho phep download
         uses: actions/upload-artifact@v4
         with:
-          name: Opaline-iOS10.3-NoCrash
-          path: "*.ipa"
+          name: Opaline_iOS10.3_Build
+          path: Opaline_Native_iOS10.3.ipa
