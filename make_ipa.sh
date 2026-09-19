@@ -141,16 +141,11 @@ codesign -f -s - --entitlements "$ENTITLEMENTS" "$APP_PATH" 2>/dev/null \
 # either form. Dropping the codesign step instead of layering on top of it
 # leaves the bundle unsigned and installd rejects the IPA with 0xe800801c.
 # Needs ldid-procursus; the homebrew-core `ldid` has no -S flag.
-if ! ldid 2>&1 | head -1 | grep -q procursus; then
-  echo "❌ ldid-procursus required: brew unlink ldid && brew install ldid-procursus"
-  exit 1
-fi
-# -s preserves whatever codesign just wrote; -S would set entitlements a second
-# time and put an empty entitlements blob on dylibs that never had one.
-echo "▶ Re-signing binaries with ldid for iOS 12.0–12.1..."
-for dylib in "$APP_PATH/Frameworks/"*.dylib; do
-  [ -e "$dylib" ] || continue
-  ldid -s "$dylib"
+echo "▶ Re-signing binaries with ldid for iOS 10..."
+for dylib in "\$APP_PATH/Frameworks/"*.dylib; do
+  [ -e "\$dylib" ] || continue
+  # Dùng -S (viết hoa) để ký lại chữ ký tiêu chuẩn tương thích tốt với iOS 10
+  ldid -S "\$dylib"
 done
 if [ -d "$APPEX_PATH" ]; then
   ldid -s "$APPEX_PATH/OpalineOpenIn"
